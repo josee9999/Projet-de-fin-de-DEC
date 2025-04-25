@@ -1,2 +1,2 @@
-idf_component_register(SRCS "main.c"
+idf_component_register(SRCS "interfaceSenseurTemperature.c" "processusGestionTemperature.c" "piloteSenseurTemperature.c" "processusAPITemps.c" "processusGestionHeure.c" "processusAffichageNeopixel.c" "piloteGestionNeopixel.c" "main.c"
                     INCLUDE_DIRS ".")

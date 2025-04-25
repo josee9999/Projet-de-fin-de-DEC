@@ -19,9 +19,8 @@ void app_main(void)
     };
 
     tNeopixel pixel[2]= {
-    {.index = 0, .rgb = NP_RGB(0,0,255)},
-    {.index = 1, .rgb = NP_RGB(0,25,0)},
-    /*{.index = 2, .rgb = NP_RGB(25,0,0)}*/
+    {.index = 0, .rgb = NP_RGB(0,5,0)},
+    {.index = 1, .rgb = NP_RGB(5,0,5)}
     };
     neopixel_SetPixel(np_ctx, pixel,2);
 }
