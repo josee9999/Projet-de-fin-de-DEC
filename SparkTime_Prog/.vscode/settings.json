@@ -9,7 +9,10 @@
     "idf.toolsPathWin": "C:\\Users\\1622713\\.espressif",
     "files.associations": {
         "neopixel.h": "c",
-        "freertos.h": "c"
+        "freertos.h": "c",
+        "interfacegestionneopixel.h": "c",
+        "processusaffichageneopixel.h": "c",
+        "task.h": "c"
     },
     "idf.flashType": "UART"
 }

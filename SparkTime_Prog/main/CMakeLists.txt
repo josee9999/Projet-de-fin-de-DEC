@@ -1,2 +1,16 @@
-idf_component_register(SRCS "interfaceSenseurTemperature.c" "processusGestionTemperature.c" "piloteSenseurTemperature.c" "processusAPITemps.c" "processusGestionHeure.c" "processusAffichageNeopixel.c" "piloteGestionNeopixel.c" "main.c"
-                    INCLUDE_DIRS ".")
+idf_component_register(
+                    SRCS 
+                        "GestionTemperature/interfaceSenseurTemperature.c" 
+                        "GestionTemperature/processusGestionTemperature.c" 
+                        "GestionTemperature/piloteSenseurTemperature.c" 
+                        "GestionHeure/processusAPITemps.c" 
+                        "GestionHeure/processusGestionHeure.c" 
+                        "Neopixel/processusAffichageNeopixel.c" 
+                        "Neopixel/interfaceGestionNeopixel.c" 
+                        "main.c"
+                    INCLUDE_DIRS 
+                        "." 
+                        "Neopixel"
+                    REQUIRES 
+                        driver 
+                        zorxx__neopixel)
