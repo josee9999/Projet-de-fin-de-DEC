@@ -20,7 +20,7 @@
 #define NP_MIN_HRS_COUNT 120
 
 extern const uint32_t couleurPixel[];
-extern const char countCouleurPixel;
+extern const int countCouleurPixel;
 
 #define COULEUR_ROUGE_PALE 0
 #define COULEUR_ORANGE_PALE 1

@@ -4,6 +4,7 @@
 #include "main.h"
 #include "Neopixel/processusAffichageNeopixel.h"
 #include "Neopixel/interfaceGestionNeopixel.h"
+#include "GestionWeb/processusServeurWeb.h"
 
 
 
@@ -17,6 +18,7 @@ void app_main(void)
         printf("erreur init neopixel\n");
         return;
     }
-    xTaskCreatePinnedToCore(task_AffichageNeopixel, "tache affichage neopixel",2048,np_ctx,5, NULL,1);
-    
+    xTaskCreatePinnedToCore(task_AffichageNeopixel, "Tache affichage Neopixel",2048,np_ctx,5, NULL,1);
+    xTaskCreatePinnedToCore(task_serveurWeb,"Tache Serveur Web",4096,NULL,5,NULL,0);
+
 }

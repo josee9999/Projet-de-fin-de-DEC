@@ -1,11 +1,11 @@
 /*
-    Nom: 
+    Nom:
 
-    Description: 
-                 
+    Description:
+
     Modification: -
     Création: 25/04/2025
-    Auteur: Josée Girard   
+    Auteur: Josée Girard
 */
 
 #ifndef PROCESSUSAFFICHAGENEOPIXEL_H
@@ -15,6 +15,17 @@
 #include "freertos/task.h"
 #include "main.h"
 
+typedef enum
+{
+    MODE_HORLOGE,
+    MODE_TEMPERATURE,
+    MODE_TEST,
+    MODE_ARCENCIEL,
+    MODE_ARRET
+} eModeAffichage;
+
+extern volatile eModeAffichage modeActuel;
+
 void task_AffichageNeopixel(void *pvParameter);
 
-#endif 
+#endif

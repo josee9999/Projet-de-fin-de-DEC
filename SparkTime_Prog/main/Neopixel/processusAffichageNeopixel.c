@@ -1,11 +1,11 @@
 /*
-    Nom: 
+    Nom:
 
-    Description: 
-                 
+    Description:
+
     Modification: -
     Création: 25/04/2025
-    Auteur: Josée Girard   
+    Auteur: Josée Girard
 */
 
 #include "processusAffichageNeopixel.h"
@@ -14,39 +14,68 @@
 #include <freertos/task.h>
 #include <stdio.h>
 
-//static tNeopixelContext np_ctx;
+// static tNeopixelContext np_ctx;
 
 void task_AffichageNeopixel(void *pvParameter)
 {
     tNeopixelContext np_ctx = (tNeopixelContext)pvParameter;
     tNeopixel pixel[NP_SEC_COUNT];
     int offset = 0;
-    int couleurActuelle = 0;
+   // int couleurActuelle = 0;
+    int indexCouleur = 0;
 
-    for(int i = 0; i < NP_SEC_COUNT;i++)
+    for (int i = 0; i < NP_SEC_COUNT; i++)
     {
         pixel[i].index = i;
-        pixel[i].rgb=COULEUR_ETEINTE;
+        pixel[i].rgb = COULEUR_ETEINTE;
     };
 
-    neopixel_setPixelInterface(np_ctx, pixel,NP_SEC_COUNT);
-    
-    while(1) //POUR TEST: while qqchose en realite??
+    neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+
+    while (1) // POUR TEST: while qqchose en realite??
     {
-        for(int i = 0; i<NP_SEC_COUNT;i++)
+        switch (modeActuel)
         {
-            pixel[i].index = i;
-            couleurActuelle = (offset + i) % countCouleurPixel;
-            pixel[i].rgb=couleurPixel[couleurActuelle];
-        }
-        neopixel_setPixelInterface(np_ctx, pixel,NP_SEC_COUNT);
+        case MODE_ARRET:
+            for (int i = 0; i < NP_SEC_COUNT; i++)
+            {
+                pixel[i].index = i;
+                pixel[i].rgb = COULEUR_ETEINTE;
+            };
+            vTaskDelay(pdMS_TO_TICKS(250));
 
-        offset++;
-        if (offset>=couleurActuelle)
-        {
-            couleurActuelle=0;
-        }
+            break;
+        case MODE_ARCENCIEL:
+            for (int i = 0; i < NP_SEC_COUNT; i++)
+            {
+                indexCouleur = offset + i;
+                pixel[i].index = i;
+                if (indexCouleur < countCouleurPixel)
+                {
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+                    pixel[i].rgb = couleurPixel[indexCouleur];
+                }
+                else
+                {
+
+                    pixel[i].rgb = couleurPixel[COULEUR_ETEINTE];
+                }
+            }
+
+            neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+
+            offset++;
+            vTaskDelay(pdMS_TO_TICKS(250));
+            break;
+
+        case MODE_TEST: // TODO
+            break;
+
+        case MODE_HORLOGE: // TODO
+            break;
+
+        case MODE_TEMPERATURE: // TODO
+            break;
+        }
     }
 }

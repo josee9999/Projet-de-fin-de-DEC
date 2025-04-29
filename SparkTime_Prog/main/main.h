@@ -1,4 +1,4 @@
-#ifdef MAIN_H
+#ifndef MAIN_H
 #define MAIN_H
 
 #define NP_SEC_GPIO 25

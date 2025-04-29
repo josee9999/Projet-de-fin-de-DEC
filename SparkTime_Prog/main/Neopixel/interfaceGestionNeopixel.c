@@ -23,7 +23,7 @@ const uint32_t couleurPixel[]={
     NP_RGB(0,0,0)//eteint
 };
 
-const char countCouleurPixel = sizeof(couleurPixel)/ sizeof(couleurPixel[0]);
+const int countCouleurPixel = sizeof(couleurPixel)/ sizeof(couleurPixel[0]);
 
 tNeopixelContext neopixel_InitInterface(int32_t pixels, int gpio_data)
 {
