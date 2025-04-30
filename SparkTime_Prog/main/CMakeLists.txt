@@ -9,6 +9,7 @@ idf_component_register(
                         "Neopixel/interfaceGestionNeopixel.c" 
                         "GestionWeb/interfaceServeurWeb.c"
                         "GestionWeb/gestionWifi.c"
+                        "GestionWeb/processusServeurWeb.c"
                         "main.c"
                     INCLUDE_DIRS 
                         "." 

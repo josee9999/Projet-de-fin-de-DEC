@@ -8,9 +8,9 @@
     Auteur: Josée Girard   
 */
 
-/*#ifndef PROCESSUS_SERVEUR_WEB_H
+#ifndef PROCESSUS_SERVEUR_WEB_H
 #define PROCESSUS_SERVEUR_WEB_H
 
 void task_serveurWeb(void *pvParameter);
 
-#endif*/
+#endif

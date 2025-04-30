@@ -7,20 +7,20 @@
     Création: 29/04/2025
     Auteur: Josée Girard
 */
+#include "processusServeurWeb.h"
+#include "interfaceServeurWeb.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "processusServeurWeb.h"
-#include "piloteServeurWeb.h"
-#include "gestionWifi.h"
+#include "esp_log.h"
 
-/*void task_serveurWeb(void *pvParameter)
+static const char *TAG = "ProcessusServeurWeb";
+
+void task_serveurWeb(void *pvParameters)
 {
-    initWifiAP();
+    ESP_LOGI(TAG, "Tâche serveur web démarrée sur le core 0");
+    demarrer_serveur_web(); 
 
-    demarrerServeurWeb();
-
-    while (1)
-    {
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000)); 
     }
-}*/
+}

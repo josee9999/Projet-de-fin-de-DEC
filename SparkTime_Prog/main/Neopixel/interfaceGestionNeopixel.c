@@ -20,7 +20,6 @@ const uint32_t couleurPixel[]={
     NP_RGB(0,0,10),//bleu
     NP_RGB(5,0,10),//indigo
     NP_RGB(5,0,5),//violet
-    NP_RGB(0,0,0)//eteint
 };
 
 const int countCouleurPixel = sizeof(couleurPixel)/ sizeof(couleurPixel[0]);

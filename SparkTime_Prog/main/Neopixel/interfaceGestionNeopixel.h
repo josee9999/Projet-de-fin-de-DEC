@@ -29,7 +29,6 @@ extern const int countCouleurPixel;
 #define COULEUR_BLEU_PALE 4
 #define COULEUR_INDIGO_PALE 5
 #define COULEUR_VIOLET_PALE 6
-#define COULEUR_ETEINTE 7
 
 tNeopixelContext neopixel_InitInterface(int32_t pixels, int gpio_data);
 bool neopixel_setPixelInterface(tNeopixelContext context, tNeopixel* pixels, int32_t pixelCount);
