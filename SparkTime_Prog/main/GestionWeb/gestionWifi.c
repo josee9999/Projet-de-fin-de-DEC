@@ -8,17 +8,24 @@
     Auteur: Josée Girard
 */
 
-#include "esp_wifi.h"
-#include "esp_log.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
-#include "esp_netif.h"
 #include "gestionWifi.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
 #include <string.h>
 
-void initWifiAP(void)
+static const char *TAG = "WiFi";
+
+void demarrer_wifi_ap(void)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_ap();
@@ -26,18 +33,24 @@ void initWifiAP(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-    wifi_config_t wifi_config =
-    {
-        .ap =
-        {
-            .ssid = "ESP32_SparkTime_AP",
-            .ssid_len = strlen("ESP32_SparkTime_AP"),
-            .password = "MotDePasse",
-            .max_connection = 2,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
-        }
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "HorlogeAP",
+            .ssid_len = strlen("HorlogeAP"),
+            .channel = 1,
+            .password = "12345678",
+            .max_connection = 4,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK},
     };
+
+    if (strlen("12345678") == 0)
+    {
+        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "AP démarré : SSID=%s, mot de passe=%s", "HorlogeAP", "12345678");
 }

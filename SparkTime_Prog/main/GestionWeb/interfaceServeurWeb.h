@@ -11,12 +11,6 @@
 #ifndef INTERFACE_SERVEUR_WEB_H
 #define INTERFACE_SERVEUR_WEB_H
 
-#include "esp_http_server.h"
-#include "processusAffichageNeopixel.h"
+void demarrer_serveur_web(void);
 
-extern volatile eModeAffichage modeActuel;
-
-esp_err_t handlerPageConnection(httpd_req_t *req);
-esp_err_t handlerPageSansWifi(httpd_req_t *req);
-
-#endif 
+#endif

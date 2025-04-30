@@ -5,12 +5,10 @@ idf_component_register(
                         "GestionTemperature/piloteSenseurTemperature.c" 
                         "GestionHeure/processusAPITemps.c" 
                         "GestionHeure/processusGestionHeure.c" 
-                        "GestionWeb/gestionWifi.c"
-                        "GestionWeb/interfaceServeurWeb.c"
-                        "GestionWeb/piloteServeurWeb.c"
-                        "GestionWeb/processusServeurWeb.c"
                         "Neopixel/processusAffichageNeopixel.c" 
                         "Neopixel/interfaceGestionNeopixel.c" 
+                        "GestionWeb/interfaceServeurWeb.c"
+                        "GestionWeb/gestionWifi.c"
                         "main.c"
                     INCLUDE_DIRS 
                         "." 
@@ -19,6 +17,6 @@ idf_component_register(
                         driver 
                         zorxx__neopixel
                         esp_http_server
-                        esp_wifi 
-                        nvs_flash 
-                        esp_netif)
+                        nvs_flash
+                        esp_event
+                        esp_wifi)

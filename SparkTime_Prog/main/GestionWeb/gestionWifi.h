@@ -8,9 +8,9 @@
     Auteur: Josée Girard
 */
 
-#ifndef GESTIONWIFI_H
-#define GESTIONWIFI_H
+#ifndef GESTION_WIFI_H
+#define GESTION_WIFI_H
 
-void initWifiAP(void);
+void demarrer_wifi_ap(void);
 
 #endif

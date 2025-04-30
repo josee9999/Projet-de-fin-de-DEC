@@ -16,7 +16,9 @@
         "piloteserveurweb.h": "c",
         "esp_http_server.h": "c",
         "esp_log.h": "c",
-        "esp_system.h": "c"
+        "esp_system.h": "c",
+        "interfaceserveurweb.h": "c",
+        "gestionwifi.h": "c"
     },
     "idf.flashType": "UART"
 }

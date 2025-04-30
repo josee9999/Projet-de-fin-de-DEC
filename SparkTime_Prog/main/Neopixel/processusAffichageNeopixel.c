@@ -14,15 +14,16 @@
 #include <freertos/task.h>
 #include <stdio.h>
 
-// static tNeopixelContext np_ctx;
+
 
 void task_AffichageNeopixel(void *pvParameter)
 {
     tNeopixelContext np_ctx = (tNeopixelContext)pvParameter;
     tNeopixel pixel[NP_SEC_COUNT];
     int offset = 0;
-   // int couleurActuelle = 0;
+    //int couleurActuelle = 0;
     int indexCouleur = 0;
+    eModeAffichage modeActuel = MODE_ARCENCIEL;
 
     for (int i = 0; i < NP_SEC_COUNT; i++)
     {
@@ -32,7 +33,7 @@ void task_AffichageNeopixel(void *pvParameter)
 
     neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
 
-    while (1) // POUR TEST: while qqchose en realite??
+    while (1) 
     {
         switch (modeActuel)
         {
@@ -42,7 +43,7 @@ void task_AffichageNeopixel(void *pvParameter)
                 pixel[i].index = i;
                 pixel[i].rgb = COULEUR_ETEINTE;
             };
-            vTaskDelay(pdMS_TO_TICKS(250));
+            vTaskDelay(pdMS_TO_TICKS(500));
 
             break;
         case MODE_ARCENCIEL:
@@ -52,18 +53,14 @@ void task_AffichageNeopixel(void *pvParameter)
                 pixel[i].index = i;
                 if (indexCouleur < countCouleurPixel)
                 {
-
                     pixel[i].rgb = couleurPixel[indexCouleur];
                 }
                 else
                 {
-
                     pixel[i].rgb = couleurPixel[COULEUR_ETEINTE];
                 }
             }
-
             neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
-
             offset++;
             vTaskDelay(pdMS_TO_TICKS(250));
             break;

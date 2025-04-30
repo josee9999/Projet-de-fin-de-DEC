@@ -8,7 +8,7 @@
     Auteur: Josée Girard   
 */
 
-#include "interfaceServeurWeb.h"
+/*#include "interfaceServeurWeb.h"
 #include "piloteServeurWeb.h"
 #include "esp_http_server.h"
 
@@ -31,4 +31,4 @@ esp_err_t demarrerServeurWeb(void)
         httpd_register_uri_handler(&serveur, &pageConnection);
     }
     return err;
-}
+}*/

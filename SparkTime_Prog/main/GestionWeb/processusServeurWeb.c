@@ -13,7 +13,7 @@
 #include "piloteServeurWeb.h"
 #include "gestionWifi.h"
 
-void task_serveurWeb(void *pvParameter)
+/*void task_serveurWeb(void *pvParameter)
 {
     initWifiAP();
 
@@ -23,4 +23,4 @@ void task_serveurWeb(void *pvParameter)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-}
+}*/

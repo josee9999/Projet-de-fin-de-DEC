@@ -24,7 +24,7 @@ typedef enum
     MODE_ARRET
 } eModeAffichage;
 
-extern volatile eModeAffichage modeActuel;
+extern eModeAffichage modeActuel;
 
 void task_AffichageNeopixel(void *pvParameter);
 
