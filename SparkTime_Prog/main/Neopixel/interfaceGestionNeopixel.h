@@ -19,16 +19,28 @@
 #define NP_MIN_HRS_GPIO 14
 #define NP_MIN_HRS_COUNT 120
 
-extern const uint32_t couleurPixel[];
+#define NOMBRE_COULEURS 7
+#define NOMBRE_NIVEAUX 3
+
+extern const uint32_t couleurPixel[NOMBRE_COULEURS][NOMBRE_NIVEAUX];
 extern const int countCouleurPixel;
 
-#define COULEUR_ROUGE_PALE 0
-#define COULEUR_ORANGE_PALE 1
-#define COULEUR_JAUNE_PALE 2
-#define COULEUR_VERT_PALE 3
-#define COULEUR_BLEU_PALE 4
-#define COULEUR_INDIGO_PALE 5
-#define COULEUR_VIOLET_PALE 6
+typedef enum {
+    COULEUR_ROUGE,
+    COULEUR_ORANGE,
+    COULEUR_JAUNE,
+    COULEUR_VERT,
+    COULEUR_BLEU,
+    COULEUR_INDIGO,
+    COULEUR_VIOLET,
+    COULEUR_BLANC
+} eCouleurNom;
+
+typedef enum {
+    NIVEAU_PALE,
+    NIVEAU_MOYEN,
+    NIVEAU_VIF
+} eLuminosite;
 
 tNeopixelContext neopixel_InitInterface(int32_t pixels, int gpio_data);
 bool neopixel_setPixelInterface(tNeopixelContext context, tNeopixel* pixels, int32_t pixelCount);

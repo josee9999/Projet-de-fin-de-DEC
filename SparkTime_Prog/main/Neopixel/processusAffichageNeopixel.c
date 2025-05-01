@@ -25,8 +25,8 @@ void task_AffichageNeopixel(void *pvParameter)
     tNeopixelContext np_ctx = (tNeopixelContext)pvParameter;
     tNeopixel pixel[NP_SEC_COUNT];
     int offset = 0;
-    // int couleurActuelle = 0;
     int indexCouleur = 0;
+    int ledIndex = 0;
 
     eModeAffichage mode = MODE_ARRET;
 
@@ -55,40 +55,98 @@ void task_AffichageNeopixel(void *pvParameter)
                 pixel[i].rgb = COULEUR_ETEINTE;
             };
             neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
-            ESP_LOGI("Neopixel", "Mode ARRET");
             vTaskDelay(pdMS_TO_TICKS(500));
 
             break;
         case MODE_ARCENCIEL:
+        for (int i = NP_SEC_COUNT - 1; i > 0; i--)
+        {
+            pixel[i].rgb = pixel[i - 1].rgb;
+        }
+    
+        // Ajoute la nouvelle couleur en tête (ou éteint si on est à la fin)
+        if (offset < countCouleurPixel)
+        {
+            pixel[0].rgb = couleurPixel[offset][NIVEAU_PALE];
+        }
+        else
+        {
+            pixel[0].rgb = COULEUR_ETEINTE;
+        }
+    
+        // Met à jour les index (nécessaire pour certaines libs Neopixel)
+        for (int i = 0; i < NP_SEC_COUNT; i++)
+        {
+            pixel[i].index = i;
+        }
+    
+        neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+    
+        offset++;
+    
+        if (offset >= countCouleurPixel + NP_SEC_COUNT)
+        {
+            ESP_LOGI("Neopixel", "Arc-en-ciel terminé, retour au mode ARRET");
+            offset = 0;
+            mode = MODE_ARRET;
+        }
+    
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        break;
+
+        case MODE_TEST:
+        uint32_t sequenceTest[] = {
+            couleurPixel[COULEUR_ROUGE][NIVEAU_PALE],
+            couleurPixel[COULEUR_ROUGE][NIVEAU_MOYEN],
+            couleurPixel[COULEUR_ROUGE][NIVEAU_VIF],
+    
+            couleurPixel[COULEUR_VERT][NIVEAU_PALE],
+            couleurPixel[COULEUR_VERT][NIVEAU_MOYEN],
+            couleurPixel[COULEUR_VERT][NIVEAU_VIF],
+    
+            couleurPixel[COULEUR_BLEU][NIVEAU_PALE],
+            couleurPixel[COULEUR_BLEU][NIVEAU_MOYEN],
+            couleurPixel[COULEUR_BLEU][NIVEAU_VIF],
+    
+            couleurPixel[COULEUR_BLANC][NIVEAU_PALE],
+            couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
+            couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
+    
+            COULEUR_ETEINTE};
+            
+            const int nbÉtapes = sizeof(sequenceTest) / sizeof(sequenceTest[0]);
+
             for (int i = 0; i < NP_SEC_COUNT; i++)
             {
-                indexCouleur = offset + i;
                 pixel[i].index = i;
-                if (indexCouleur < countCouleurPixel)
+                pixel[i].rgb = COULEUR_ETEINTE;
+            }
+            ESP_LOGI("Neopixel", "Début du test : ledIndex = %d, indexCouleur = %d", ledIndex, indexCouleur);
+            if (ledIndex < NP_SEC_COUNT)
+            {
+                if (indexCouleur < 13)
                 {
-                    pixel[i].rgb = couleurPixel[indexCouleur];
+                    pixel[ledIndex].rgb = sequenceTest[indexCouleur];
+                    ESP_LOGI("Neopixel", "LED %d, couleur appliquée : 0x%08lX", ledIndex, pixel[ledIndex].rgb);
+
+                    neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+                    indexCouleur++;
                 }
                 else
                 {
-                    pixel[i].rgb = COULEUR_ETEINTE;
+                    indexCouleur = 0;
+                    ledIndex++;
+                    ESP_LOGI("Neopixel", "Passage à la LED suivante : ledIndex = %d", ledIndex);
                 }
             }
-            neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
-            offset++;
-            ESP_LOGI("Neopixel", "Mode ARCENCIEL - offset %d", offset);
-
-            offset++;
-            if (offset >= countCouleurPixel)
+            else
             {
-                ESP_LOGI("Neopixel", "Arc-en-ciel terminé, retour au mode ARRET");
-                offset = 0;
+                ledIndex = 0;
+                indexCouleur = 0;
                 mode = MODE_ARRET;
+                ESP_LOGI("Neopixel", "Test terminé, retour au mode ARRET");
             }
-
-            vTaskDelay(pdMS_TO_TICKS(250));
-            break;
-
-        case MODE_TEST: // TODO
+            vTaskDelay(pdMS_TO_TICKS(500));
             break;
 
         case MODE_HORLOGE: // TODO

@@ -13,9 +13,17 @@
 
 #include "esp_http_server.h"
 extern QueueHandle_t fileMode;
-void demarrer_serveur_web(void);
 
-esp_err_t page_racine_handler(httpd_req_t *req);
-esp_err_t set_mode_handler(httpd_req_t *req);
+void demarrerServeurWeb(void);
+
+esp_err_t pageAccueilHandler(httpd_req_t *req);
+esp_err_t pagePersonnalisationSansWifiHandler(httpd_req_t *req);
+esp_err_t pagePersonnalisationAvecWifiHandler(httpd_req_t *req);
+
+esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req);
+esp_err_t setHorlogeAvecWifiHandler(httpd_req_t *req);
+
+esp_err_t setModeSansWifiHandler(httpd_req_t *req);
+esp_err_t setModeAvecWifiHandler(httpd_req_t *req);
 
 #endif
