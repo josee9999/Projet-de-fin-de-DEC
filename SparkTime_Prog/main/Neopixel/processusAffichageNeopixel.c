@@ -110,7 +110,7 @@ void task_AffichageNeopixel(void *pvParameter)
     
             couleurPixel[COULEUR_BLANC][NIVEAU_PALE],
             couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
-            couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
+            couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN], //REMETTRE A VIF QUAND 5V DISPO
     
             COULEUR_ETEINTE};
             

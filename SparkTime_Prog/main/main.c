@@ -7,6 +7,7 @@
 #include "GestionWeb/gestionWifi.h"
 #include "GestionWeb/processusServeurWeb.h"
 #include "GestionWeb/interfaceServeurWeb.h"
+#include "GestionWeb/piloteServeurWeb.h"
 #include "esp_log.h"
 
 static const char *TAG = "Main";

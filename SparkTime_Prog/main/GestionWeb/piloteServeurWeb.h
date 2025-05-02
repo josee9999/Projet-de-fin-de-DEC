@@ -9,9 +9,20 @@
 */
 
 
-/*#ifndef PILOTE_SERVEUR_WEB_H
+#ifndef PILOTE_SERVEUR_WEB_H
 #define PILOTE_SERVEUR_WEB_H
 
-esp_err_t demarrerServeurWeb(void);
+#include "esp_err.h"        
+#include "esp_http_server.h"
 
-#endif*/
+void demarrerServeurWeb(void);
+
+esp_err_t setConnectionAuWifiHandler(httpd_req_t *req);
+
+esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req);
+esp_err_t setHorlogeAvecWifiHandler(httpd_req_t *req);
+
+esp_err_t setModeSansWifiHandler(httpd_req_t *req);
+esp_err_t setModeAvecWifiHandler(httpd_req_t *req);
+
+#endif

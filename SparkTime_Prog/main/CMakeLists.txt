@@ -7,8 +7,9 @@ idf_component_register(
                         "GestionHeure/processusGestionHeure.c" 
                         "Neopixel/processusAffichageNeopixel.c" 
                         "Neopixel/interfaceGestionNeopixel.c" 
-                        "GestionWeb/interfaceServeurWeb.c"
                         "GestionWeb/gestionWifi.c"
+                        "GestionWeb/piloteServeurWeb.c"
+                        "GestionWeb/interfaceServeurWeb.c"
                         "GestionWeb/processusServeurWeb.c"
                         "main.c"
                     INCLUDE_DIRS 

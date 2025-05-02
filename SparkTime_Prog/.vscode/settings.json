@@ -18,7 +18,11 @@
         "esp_log.h": "c",
         "esp_system.h": "c",
         "interfaceserveurweb.h": "c",
-        "gestionwifi.h": "c"
+        "gestionwifi.h": "c",
+        "text_encoding": "c",
+        "thread": "c",
+        "chrono": "c",
+        "typeinfo": "c"
     },
     "idf.flashType": "UART"
 }

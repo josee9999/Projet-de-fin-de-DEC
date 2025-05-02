@@ -9,6 +9,7 @@
 */
 #include "processusServeurWeb.h"
 #include "interfaceServeurWeb.h"
+#include "piloteServeurWeb.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
