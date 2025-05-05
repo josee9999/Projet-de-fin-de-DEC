@@ -11,6 +11,6 @@
 #ifndef GESTION_WIFI_H
 #define GESTION_WIFI_H
 
-void demarrer_wifi_ap(void);
+void demarrerWifiAP(void);
 
 #endif

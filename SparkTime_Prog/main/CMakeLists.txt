@@ -21,4 +21,5 @@ idf_component_register(
                         esp_http_server
                         nvs_flash
                         esp_event
-                        esp_wifi)
+                        esp_wifi
+                        esp_timer)

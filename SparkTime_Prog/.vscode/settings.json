@@ -22,7 +22,18 @@
         "text_encoding": "c",
         "thread": "c",
         "chrono": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "charconv": "c",
+        "optional": "c",
+        "format": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "processusserveurweb.h": "c"
     },
     "idf.flashType": "UART"
 }

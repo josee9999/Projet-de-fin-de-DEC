@@ -97,6 +97,79 @@ const char *styleCSS =
     "}"
     "</style>";
 
+const char *optionsCouleur =
+    "<option value=\"rouge\">Rouge</option>"
+    "<option value=\"orange\">Orange</option>"
+    "<option value=\"jaune\">Jaune</option>"
+    "<option value=\"vert\">Vert</option>"
+    "<option value=\"bleu\">Bleu</option>"
+    "<option value=\"indigo\">Indigo</option>"
+    "<option value=\"violet\">Violet</option>";
+
+const char *jsPageSansWifi =
+    "<script>"
+    "document.getElementById(\"formMode\").onsubmit = function(e) {"
+    "  e.preventDefault();"
+    "  var mode = document.getElementById(\"mode\").value;"
+    "  var xhr = new XMLHttpRequest();"
+    "  xhr.open(\"GET\", \"/setModeSansWifi?mode=\" + mode, true);"
+    "  xhr.send();"
+    "};"
+
+    "document.getElementById(\"formPerso\").onsubmit = function(e) {"
+    "  e.preventDefault();"
+    "  var heure = document.getElementById(\"heure\").value;"
+    "  var couleurHeures = document.getElementById(\"couleurHeures\").value;"
+    "  var couleurMinutes = document.getElementById(\"couleurMinutes\").value;"
+    "  var couleurSecondes = document.getElementById(\"couleurSecondes\").value;"
+    "  var affichageTemperature = document.getElementById(\"affichageTemperature\").checked;"
+    " var affichageType = document.querySelector('input[name=\"affichageType\"]:checked').value;"
+    "  var xhr = new XMLHttpRequest();"
+    "  xhr.open(\"GET\", \"/setHorlogeSansWifi?heure=\" + encodeURIComponent(heure) +"
+    "      \"&couleurHeures=\" + encodeURIComponent(couleurHeures) +"
+    "      \"&couleurMinutes=\" + encodeURIComponent(couleurMinutes) +"
+    "      \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) +"
+    "      \"&affichageTemperature=\" + affichageTemperature +"
+    "      \"&affichageType=\" + encodeURIComponent(affichageType), true);"
+    "  xhr.send();"
+    "};"
+    "</script>";
+
+const char *jsPageAvecWifi =
+    "<script>"
+    "document.getElementById(\"formPerso\").onsubmit = function(e) {"
+    "e.preventDefault(); "
+
+    "var villeActuelle = document.getElementById(\"villeActuelle\").value;"
+    "var ville2e = document.getElementById(\"ville2e\").value;"
+    "var couleurHeuresActuels = document.getElementById(\"couleurHeuresActuels\").value;"
+    "var couleurMinutesActuels = document.getElementById(\"couleurMinutesActuels\").value;"
+    "var couleurSecondes = document.getElementById(\"couleurSecondes\").value;"
+    "var couleurHeures2e = document.getElementById(\"couleurHeures2e\").value;"
+    "var couleurMinutes2e = document.getElementById(\"couleurMinutes2e\").value;"
+    "var affichageTemperature = document.getElementById(\"affichageTemperature\").checked;"
+
+    "var xhr = new XMLHttpRequest();"
+    "xhr.open(\"GET\", \"/setHorlogeAvecWifi?villeActuelle=\" + encodeURIComponent(villeActuelle) + "
+    "       \"&ville2e=\" + encodeURIComponent(ville2e) + "
+    "       \"&couleurHeuresActuels=\" + encodeURIComponent(couleurHeuresActuels) +"
+    "       \"&couleurMinutesActuels=\" + encodeURIComponent(couleurMinutesActuels) +"
+    "       \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) +"
+    "       \"&couleurHeures2e=\" + encodeURIComponent(couleurHeures2e) +"
+    "       \"&couleurMinutes2e=\" + encodeURIComponent(couleurMinutes2e) +"
+    "       \"&affichageTemperature=\" + affichageTemperature, true);"
+    "  xhr.send(); "
+    "};"
+
+    "document.getElementById(\"formMode\").onsubmit = function(e) {"
+    "  e.preventDefault();"
+    "  var mode = document.getElementById(\"mode\").value;"
+    "  var xhr = new XMLHttpRequest();"
+    "  xhr.open(\"GET\", \"/setModeAvecWifi?mode=\" + mode, true);"
+    "  xhr.send();"
+    "};"
+    "</script>";
+
 esp_err_t pageAccueilHandler(httpd_req_t *req)
 {
     static char pageAccueil[8192];
@@ -166,35 +239,17 @@ esp_err_t pagePersonnalisationSansWifiHandler(httpd_req_t *req)
              "</div>"
              "<select name=\"couleurHeures\" id=\"couleurHeures\" required>"
              "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>"
-             "<option value=\"rouge\">Rouge</option>"
-             "<option value=\"orange\">Orange</option>"
-             "<option value=\"jaune\">Jaune</option>"
-             "<option value=\"vert\">Vert</option>"
-             "<option value=\"bleu\">Bleu</option>"
-             "<option value=\"indigo\">Indigo</option>"
-             "<option value=\"violet\">Violet</option>"
+             "%s"
              "</select>"
 
              "<select name=\"couleurMinutes\" id=\"couleurMinutes\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des minutess —</option>"
-             "<option value=\"rouge\">Rouge</option>"
-             "<option value=\"orange\">Orange</option>"
-             "<option value=\"jaune\">Jaune</option>"
-             "<option value=\"vert\">Vert</option>"
-             "<option value=\"bleu\">Bleu</option>"
-             "<option value=\"indigo\">Indigo</option>"
-             "<option value=\"violet\">Violet</option>"
+             "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>"
+             "%s"
              "</select>"
 
              "<select name=\"couleurSecondes\" id=\"couleurSecondes\" required>"
              "<option value=\"\" disabled selected hidden>— Couleur des secondes —</option>"
-             "<option value=\"rouge\">Rouge</option>"
-             "<option value=\"orange\">Orange</option>"
-             "<option value=\"jaune\">Jaune</option>"
-             "<option value=\"vert\">Vert</option>"
-             "<option value=\"bleu\">Bleu</option>"
-             "<option value=\"indigo\">Indigo</option>"
-             "<option value=\"violet\">Violet</option>"
+             "%s"
              "</select>"
 
              "<div class=\"ligneHeure\">"
@@ -227,45 +282,110 @@ esp_err_t pagePersonnalisationSansWifiHandler(httpd_req_t *req)
              "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
              "<input type=\"button\" value=\"Accueil\" onclick=\"location.href='/'\">"
 
-             "<script>"
-             "document.getElementById(\"formMode\").onsubmit = function(e) {"
-             "  e.preventDefault();"
-             "  var mode = document.getElementById(\"mode\").value;"
-             "  var xhr = new XMLHttpRequest();"
-             "  xhr.open(\"GET\", \"/setModeSansWifi?mode=\" + mode, true);"
-             "  xhr.send();"
-             "};"
-
-             "document.getElementById(\"formPerso\").onsubmit = function(e) {"
-             "  e.preventDefault();"
-             "  var heure = document.getElementById(\"heure\").value;"
-             "  var couleurHeures = document.getElementById(\"couleurHeures\").value;"
-             "  var couleurMinutes = document.getElementById(\"couleurMinutes\").value;"
-             "  var couleurSecondes = document.getElementById(\"couleurSecondes\").value;"
-             "  var affichageTemperature = document.getElementById(\"affichageTemperature\").checked;"
-            " var affichageType = document.querySelector('input[name=\"affichageType\"]:checked').value;"
-             "  var xhr = new XMLHttpRequest();"
-             "  xhr.open(\"GET\", \"/setHorlogeSansWifi?heure=\" + encodeURIComponent(heure) +"
-             "      \"&couleurHeures=\" + encodeURIComponent(couleurHeures) +"
-             "      \"&couleurMinutes=\" + encodeURIComponent(couleurMinutes) +"
-             "      \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) +"
-             "      \"&affichageTemperature=\" + affichageTemperature +"
-             "      \"&affichageType=\" + encodeURIComponent(affichageType), true);"
-             "  xhr.send();"
-             "};"
-             "</script>"
+             "%s"
 
              "</div>"
              "</body>"
              "</html>",
-             styleCSS);
+             styleCSS, optionsCouleur, optionsCouleur, optionsCouleur, jsPageSansWifi);
     httpd_resp_send(req, pageSansWifi, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
-esp_err_t pagePersonnalisationAvecWifiHandler(httpd_req_t *req) // TODO
+esp_err_t pagePersonnalisationAvecWifiHandler(httpd_req_t *req)
 {
+    static char pageAvecWifi[8192];
 
+    snprintf(pageAvecWifi, sizeof(pageAvecWifi),
+             "<html>"
+             "<head>"
+             "<meta charset=\"UTF-8\">"
+             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+             "%s"
+             "</head>"
+             "<body>"
+             "<div class=\"conteneurFormulaire\">"
+
+             "<h1>SparkTime - version avec wifi</h1>"
+
+             "<h2>Personnalisation de l'horloge</h2><br>"
+             "<form id=\"formPerso\">"
+
+             "<select name=\"villeActuelle\" id=\"villeActuelle\" required>"
+             "<option value=\"\" disabled selected hidden>— Choisir la ville actuelle —</option>"
+             "<option value=\"Montreal\">Montréal</option>"
+             "<option value=\"Paris\">Paris</option>"
+             "<option value=\"Tokyo\">Tokyo</option>"
+             "<option value=\"NewYork\">New York</option>"
+             "</select>"
+
+             "<select name=\"ville2e\" id=\"ville2e\" required>"
+             "<option value=\"\" disabled selected hidden>— Choisir la 2<sup>e</sup> ville —</option>"
+             "<option value=\"Montreal\">Montréal</option>"
+             "<option value=\"Paris\">Paris</option>"
+             "<option value=\"Tokyo\">Tokyo</option>"
+             "<option value=\"NewYork\">New York</option>"
+             "</select>"
+
+             "<p>Couleurs pour l'heure de la ville actuelle:</p>"
+
+             "<select name=\"couleurHeuresActuels\" id=\"couleurHeuresActuels\" required>"
+             "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>"
+             "%s"
+             "</select>"
+
+             "<select name=\"couleurMinutesActuels\" id=\"couleurMinutesActuels\" >"
+             "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>"
+             "%s"
+             "</select>"
+
+             "<select name=\"couleurSecondes\" id=\"couleurSecondes\" required>"
+             "<option value=\"\" disabled selected hidden>— Couleur des secondes —</option>"
+             "%s"
+             "</select>"
+
+             "<p>Couleur de l'heure de la 2<sup>e</sup> ville:</p>"
+             "<p><small>*La couleur des minutes sera seulement appliqué si le fuseau horaire de la 2<sup>e</sup> ville n'a pas les mêmes minutes que la ville actuelle.</small></p>"
+
+             "<select name=\"couleurHeures2e\" id=\"couleurHeures2e\" required>"
+             "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>"
+             "%s"
+             "</select>"
+
+             "<select name=\"couleurMinutes2e\" id=\"couleurMinutes2e\" required>"
+             "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>"
+             "%s"
+             "</select>"
+
+             "<div class=\"ligneHeure\">"
+             "<label for=\"affichageTemperature\">Affichage de température :</label>"
+             "<input type=\"checkbox\" id=\"affichageTemperature\" name=\"affichageTemperature\"><br>"
+             "</div>"
+
+             "<input type=\"submit\" value=\"Personnaliser\">"
+             "</form>"
+
+             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
+
+             "<h2>Tests</h2>"
+             "<form id=\"formMode\">"
+             "<select id=\"mode\" name=\"mode\">"
+             "<option value=\"\" disabled selected>Sélectionner le mode</option>"
+             "<option value=\"2\">test de leds</option>"
+             "<option value=\"3\">arc-en-ciel</option>"
+             "<option value=\"4\">rien</option>"
+             "</select><br>"
+             "<input type=\"submit\" value=\"GO\">"
+             "</form>"
+             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
+             "<input type=\"button\" value=\"Accueil\" onclick=\"location.href='/'\">"
+
+             "%s"
+
+             "</div>"
+             "</body>"
+             "</html>",
+             styleCSS, optionsCouleur, optionsCouleur, optionsCouleur, optionsCouleur, optionsCouleur, jsPageAvecWifi);
+    httpd_resp_send(req, pageAvecWifi, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
-

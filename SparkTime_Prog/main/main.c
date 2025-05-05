@@ -19,7 +19,7 @@ eModeAffichage modeActuel = MODE_ARRET;
 void app_main(void)
 {
     ESP_LOGI(TAG, "Démarrage du Wi-Fi en mode AP");
-    demarrer_wifi_ap();
+    demarrerWifiAP();
     
     fileMode = xQueueCreate(5, sizeof(eModeAffichage));
     if (fileMode == NULL) {
