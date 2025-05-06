@@ -186,10 +186,19 @@ esp_err_t pageAccueilHandler(httpd_req_t *req)
              "<h1>SparkTime - Connexion</h1>"
 
              "<h2>Connexion au Wi-Fi</h2>"
-             "<form id=\"formWifi\">"
+
+             //version qui permet de  replir le formulaire ssid/mdp (form non fonctionnel...)
+             /*"<form id=\"formWifi\">"
              "<input type=\"text\" id=\"ssidConnectWifi\" name=\"ssid\" placeholder=\"Nom du réseau (SSID)\" required><br>"
              "<input type=\"password\" id=\"mdpConnectWifi\" name=\"password\" placeholder=\"Mot de passe\" required><br>"
              "<input type=\"submit\" value=\"Connexion avec WiFi\">"
+             "</form>"*/
+
+             //version qui NE permet PAS de replir le formulaire ssid/mdp
+             "<form id=\"formWifi\">"
+             "<input type=\"text\" id=\"ssidConnectWifi\" name=\"ssid\" placeholder=\"Nom du réseau (SSID)\" required disabled><br>"
+             "<input type=\"password\" id=\"mdpConnectWifi\" name=\"password\" placeholder=\"Mot de passe\" required disabled><br>"
+             "<input type=\"submit\" value=\"Connexion avec WiFi\" disabled>"
              "</form>"
 
              "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"

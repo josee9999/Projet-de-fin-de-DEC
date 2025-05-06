@@ -1,13 +1,3 @@
-/*
-    Nom:
-
-    Description:
-
-    Modification: -
-    Création: 29/04/2025
-    Auteur: Josée Girard
-*/
-
 #include "gestionWifi.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
