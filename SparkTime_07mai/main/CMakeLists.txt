@@ -1,0 +1,25 @@
+idf_component_register(
+                    SRCS 
+                        "GestionTemperature/interfaceSenseurTemperature.c" 
+                        "GestionTemperature/processusGestionTemperature.c" 
+                        "GestionTemperature/piloteSenseurTemperature.c" 
+                        "GestionHeure/processusAPITemps.c" 
+                        "GestionHeure/processusGestionHeure.c" 
+                        "Neopixel/processusAffichageNeopixel.c" 
+                        "Neopixel/interfaceGestionNeopixel.c" 
+                        "GestionWeb/gestionWifi.c"
+                        "GestionWeb/piloteServeurWeb.c"
+                        "GestionWeb/interfaceServeurWeb.c"
+                        "GestionWeb/processusServeurWeb.c"
+                        "main.c"
+                    INCLUDE_DIRS 
+                        "." 
+                        "Neopixel"
+                    REQUIRES 
+                        driver 
+                        zorxx__neopixel
+                        esp_http_server
+                        nvs_flash
+                        esp_event
+                        esp_wifi
+                        esp_timer)
