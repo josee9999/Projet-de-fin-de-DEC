@@ -150,26 +150,53 @@ esp_err_t setModeSansWifiHandler(httpd_req_t *req)
 esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req)
 {
     char query[128];
+    sParametresHorloge params = {0};
+
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
     {
-        char heure[16], couleurHeures[16], couleurMinutes[16], couleurSecondes[16];
-        char affichageTemperature[8], affichageType[16];
+        if (httpd_query_key_value(query, "heure", params.heure, sizeof(params.heure)) == ESP_OK)
+            ESP_LOGI(TAG, "Heure: %s", params.heure);
+        else
+            ESP_LOGW(TAG, "Paramètre 'heure' non reçu.");
 
-        if (httpd_query_key_value(query, "heure", heure, sizeof(heure)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurHeures", couleurHeures, sizeof(couleurHeures)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurMinutes", couleurMinutes, sizeof(couleurMinutes)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurSecondes", couleurSecondes, sizeof(couleurSecondes)) == ESP_OK &&
-            httpd_query_key_value(query, "affichageTemperature", affichageTemperature, sizeof(affichageTemperature)) == ESP_OK &&
-            httpd_query_key_value(query, "affichageType", affichageType, sizeof(affichageType)) == ESP_OK)
+        if (httpd_query_key_value(query, "couleurHeures", params.couleurHeures, sizeof(params.couleurHeures)) == ESP_OK)
+            ESP_LOGI(TAG, "Couleur Heures: %s", params.couleurHeures);
+        else
+            ESP_LOGW(TAG, "Paramètre 'couleurHeures' non reçu.");
+
+        if (httpd_query_key_value(query, "couleurMinutes", params.couleurMinutes, sizeof(params.couleurMinutes)) == ESP_OK)
+            ESP_LOGI(TAG, "Couleur Minutes: %s", params.couleurMinutes);
+        else
+            ESP_LOGW(TAG, "Paramètre 'couleurMinutes' non reçu.");
+
+        if (httpd_query_key_value(query, "couleurSecondes", params.couleurSecondes, sizeof(params.couleurSecondes)) == ESP_OK)
+            ESP_LOGI(TAG, "Couleur Secondes: %s", params.couleurSecondes);
+        else
+            ESP_LOGW(TAG, "Paramètre 'couleurSecondes' non reçu.");
+
+        if (httpd_query_key_value(query, "affichageTemperature", params.affichageTemperature, sizeof(params.affichageTemperature)) == ESP_OK)
+            ESP_LOGI(TAG, "Affichage Temp: %s", params.affichageTemperature);
+        else
+            ESP_LOGW(TAG, "Paramètre 'affichageTemperature' non reçu.");
+
+        if (httpd_query_key_value(query, "affichageType", params.affichageType, sizeof(params.affichageType)) == ESP_OK)
+            ESP_LOGI(TAG, "Affichage Type: %s", params.affichageType);
+        else
+            ESP_LOGW(TAG, "Paramètre 'affichageType' non reçu.");
+
+        setParametresHorloge(&params);
+        ESP_LOGI(TAG, "Les paramètres de l'horloge ont été mis à jour.");
+        modeActuel = MODE_HORLOGE;
+        if (xQueueSend(fileMode, &modeActuel, portMAX_DELAY) != pdPASS)
         {
-            ESP_LOGI(TAG, "Heure: %s, Couleur Heures: %s, Couleur Minutes: %s, Couleur Secondes: %s, Affichage Temp: %s, Affichage Type: %s",
-                     heure, couleurHeures, couleurMinutes, couleurSecondes, affichageTemperature, affichageType);
-
-            // Traiter ici les données reçues et mettre à jour l'horloge
-            // Par exemple, utiliser affichageTemperature pour activer/désactiver l'affichage de la température
-            // et affichageType pour choisir entre régulier et continu.
+            ESP_LOGE(TAG, "Erreur d'envoi du mode dans la Queue");
         }
     }
+    else
+    {
+        ESP_LOGE(TAG, "Impossible de récupérer la chaîne de requête.");
+    }
+
     httpd_resp_send(req, NULL, 0);
     return ESP_OK;
 }

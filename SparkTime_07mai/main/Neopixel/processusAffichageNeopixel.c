@@ -13,11 +13,26 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <stdio.h>
+#include <string.h>
 #include "esp_log.h"
 
 extern QueueHandle_t fileMode;
 
 // eModeAffichage modeActuel = MODE_ARCENCIEL;
+static sParametresHorloge parametresHorloge = {0};
+
+void setParametresHorloge(sParametresHorloge *params)
+{
+    if (params)
+    {
+        memcpy(&parametresHorloge, params, sizeof(sParametresHorloge));
+    }
+}
+
+sParametresHorloge getParametresHorloge(void)
+{
+    return parametresHorloge;
+}
 
 void task_AffichageNeopixel(void *pvParameter)
 {
@@ -45,7 +60,6 @@ void task_AffichageNeopixel(void *pvParameter)
         {
             mode = nouveauMode;
         }
-
         switch (mode)
         {
         case MODE_ARRET:
@@ -59,61 +73,61 @@ void task_AffichageNeopixel(void *pvParameter)
 
             break;
         case MODE_ARCENCIEL:
-        for (int i = NP_SEC_COUNT - 1; i > 0; i--)
-        {
-            pixel[i].rgb = pixel[i - 1].rgb;
-        }
-    
-        // Ajoute la nouvelle couleur en tête (ou éteint si on est à la fin)
-        if (offset < countCouleurPixel)
-        {
-            pixel[0].rgb = couleurPixel[offset][NIVEAU_PALE];
-        }
-        else
-        {
-            pixel[0].rgb = COULEUR_ETEINTE;
-        }
-    
-        // Met à jour les index (nécessaire pour certaines libs Neopixel)
-        for (int i = 0; i < NP_SEC_COUNT; i++)
-        {
-            pixel[i].index = i;
-        }
-    
-        neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
-    
-        offset++;
-    
-        if (offset >= countCouleurPixel + NP_SEC_COUNT)
-        {
-            ESP_LOGI("Neopixel", "Arc-en-ciel terminé, retour au mode ARRET");
-            offset = 0;
-            mode = MODE_ARRET;
-        }
-    
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        break;
+            for (int i = NP_SEC_COUNT - 1; i > 0; i--)
+            {
+                pixel[i].rgb = pixel[i - 1].rgb;
+            }
+
+            // Ajoute la nouvelle couleur en tête (ou éteint si on est à la fin)
+            if (offset < countCouleurPixel)
+            {
+                pixel[0].rgb = couleurPixel[offset][NIVEAU_PALE];
+            }
+            else
+            {
+                pixel[0].rgb = COULEUR_ETEINTE;
+            }
+
+            // Met à jour les index (nécessaire pour certaines libs Neopixel)
+            for (int i = 0; i < NP_SEC_COUNT; i++)
+            {
+                pixel[i].index = i;
+            }
+
+            neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+
+            offset++;
+
+            if (offset >= countCouleurPixel + NP_SEC_COUNT)
+            {
+                ESP_LOGI("Neopixel", "Arc-en-ciel terminé, retour au mode ARRET");
+                offset = 0;
+                mode = MODE_ARRET;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            break;
 
         case MODE_TEST:
-        uint32_t sequenceTest[] = {
-            couleurPixel[COULEUR_ROUGE][NIVEAU_PALE],
-            couleurPixel[COULEUR_ROUGE][NIVEAU_MOYEN],
-            couleurPixel[COULEUR_ROUGE][NIVEAU_VIF],
-    
-            couleurPixel[COULEUR_VERT][NIVEAU_PALE],
-            couleurPixel[COULEUR_VERT][NIVEAU_MOYEN],
-            couleurPixel[COULEUR_VERT][NIVEAU_VIF],
-    
-            couleurPixel[COULEUR_BLEU][NIVEAU_PALE],
-            couleurPixel[COULEUR_BLEU][NIVEAU_MOYEN],
-            couleurPixel[COULEUR_BLEU][NIVEAU_VIF],
-    
-            couleurPixel[COULEUR_BLANC][NIVEAU_PALE],
-            couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
-            couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN], //REMETTRE A VIF QUAND 5V DISPO
-    
-            COULEUR_ETEINTE};
-            
+            uint32_t sequenceTest[] = {
+                couleurPixel[COULEUR_ROUGE][NIVEAU_PALE],
+                couleurPixel[COULEUR_ROUGE][NIVEAU_MOYEN],
+                couleurPixel[COULEUR_ROUGE][NIVEAU_VIF],
+
+                couleurPixel[COULEUR_VERT][NIVEAU_PALE],
+                couleurPixel[COULEUR_VERT][NIVEAU_MOYEN],
+                couleurPixel[COULEUR_VERT][NIVEAU_VIF],
+
+                couleurPixel[COULEUR_BLEU][NIVEAU_PALE],
+                couleurPixel[COULEUR_BLEU][NIVEAU_MOYEN],
+                couleurPixel[COULEUR_BLEU][NIVEAU_VIF],
+
+                couleurPixel[COULEUR_BLANC][NIVEAU_PALE],
+                couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
+                couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN], // REMETTRE A VIF QUAND 5V DISPO
+
+                COULEUR_ETEINTE};
+
             const int nbÉtapes = sizeof(sequenceTest) / sizeof(sequenceTest[0]);
 
             for (int i = 0; i < NP_SEC_COUNT; i++)
@@ -149,11 +163,54 @@ void task_AffichageNeopixel(void *pvParameter)
             vTaskDelay(pdMS_TO_TICKS(500));
             break;
 
-        case MODE_HORLOGE: // TODO
+        case MODE_HORLOGE:
+            choixCouleur(parametresHorloge.couleurHeures, 0, pixel);
+            choixCouleur(parametresHorloge.couleurMinutes, 1, pixel);
+            neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
             break;
 
         case MODE_TEMPERATURE: // TODO
             break;
         }
+    }
+}
+
+void choixCouleur(const char *couleur, int position, tNeopixel *pixel)
+{
+    if (strcmp(couleur, "rouge") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_ROUGE][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "orange") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_ORANGE][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "jaune") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_JAUNE][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "vert") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_VERT][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "bleu") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_BLEU][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "indigo") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_INDIGO][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "violet") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_VIOLET][NIVEAU_PALE];
+    }
+    else if (strcmp(couleur, "blanc") == 0)
+    {
+        pixel[position].rgb = couleurPixel[COULEUR_BLANC][NIVEAU_PALE];
+    }
+    else
+    {
+        pixel[position].rgb = COULEUR_ETEINTE;
     }
 }

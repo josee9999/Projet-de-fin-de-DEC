@@ -11,6 +11,7 @@
 #ifndef PROCESSUSAFFICHAGENEOPIXEL_H
 #define PROCESSUSAFFICHAGENEOPIXEL_H
 
+#include "interfaceGestionNeopixel.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "main.h"
@@ -29,6 +30,17 @@ typedef enum
 extern eModeAffichage modeActuel;
 extern QueueHandle_t fileMode;
 
-void task_AffichageNeopixel(void *pvParameter);
+typedef struct {
+    char heure[16];
+    char couleurHeures[16];
+    char couleurMinutes[16];
+    char couleurSecondes[16];
+    char affichageTemperature[8];
+    char affichageType[16];
+} sParametresHorloge;
 
+
+void setParametresHorloge(sParametresHorloge *params);
+void task_AffichageNeopixel(void *pvParameter);
+void choixCouleur(const char *couleur, int position, tNeopixel *pixel);
 #endif
