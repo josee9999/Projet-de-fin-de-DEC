@@ -11,6 +11,7 @@
 
 #include "interfaceGestionNeopixel.h"
 #include <stdio.h>
+#include "esp_log.h"
 
 const uint32_t couleurPixel[NOMBRE_COULEURS][NOMBRE_NIVEAUX] = {
     {NP_RGB(10, 0, 0), NP_RGB(128, 0, 0), NP_RGB(255, 0, 0)},       // rouge

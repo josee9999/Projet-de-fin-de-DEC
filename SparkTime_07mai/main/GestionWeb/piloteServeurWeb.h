@@ -16,10 +16,9 @@
 #include "esp_http_server.h"
 
 void demarrerServeurWeb(void);
-
-static void connecterAuWifiStation(void *arg);
 esp_err_t setConnectionAuWifiHandler(httpd_req_t *req);
-static void *copierSSIDetMotDePasse(const char *ssid, const char *password);
+
+void urlDecode(char *src, size_t srcSize);
 
 esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req);
 esp_err_t setHorlogeAvecWifiHandler(httpd_req_t *req);

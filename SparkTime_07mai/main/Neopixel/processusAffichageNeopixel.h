@@ -27,14 +27,20 @@ typedef enum
     MODE_ARRET
 } eModeAffichage;
 
-extern eModeAffichage modeActuel;
-extern QueueHandle_t fileMode;
+//extern eModeAffichage modeActuel;
+extern QueueHandle_t fileParamHorloge;
 
 typedef struct {
+    eModeAffichage modeActuel;
+    int nbVille;
     char heure[16];
-    char couleurHeures[16];
-    char couleurMinutes[16];
-    char couleurSecondes[16];
+    char villeActuelle[16];
+    char ville2e[16];
+    char couleurHeuresActuelles[16];
+    char couleurMinutesActuelles[16];
+    char couleurSecondesActuelles[16];
+    char couleurHeures2e[16];
+    char couleurMinutes2e[16];
     char affichageTemperature[8];
     char affichageType[16];
 } sParametresHorloge;
@@ -42,5 +48,8 @@ typedef struct {
 
 void setParametresHorloge(sParametresHorloge *params);
 void task_AffichageNeopixel(void *pvParameter);
-void choixCouleur(const char *couleur, int position, tNeopixel *pixel);
+void choixCouleur(const char *couleur, int position, tNeopixel *pixel,int intensiteLumineuse);
+int determinerIntensiteNeopixelHorloge(const sParametresHorloge *parametres);
+void initialiserProcessusAffichageNeopixel();
+
 #endif

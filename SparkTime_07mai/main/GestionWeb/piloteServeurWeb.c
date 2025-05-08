@@ -17,11 +17,16 @@
 #include "esp_timer.h"
 #include "processusAffichageNeopixel.h"
 #include "interfaceServeurWeb.h"
+#include "GestionHeure/processusGestionHeure.h"
 #include <stdio.h>
+
+static void connecterAuWifiStation(void *arg);
+static void *copierSSIDetMotDePasse(const char *ssid, const char *password);
 
 static const char *TAG = "piloteServeurWeb";
 
-extern QueueHandle_t fileMode;
+extern QueueHandle_t fileParamHorloge;
+extern QueueHandle_t fileHeure;
 extern eModeAffichage modeActuel;
 
 typedef struct
@@ -119,6 +124,7 @@ void demarrerServeurWeb(void)
 esp_err_t setModeSansWifiHandler(httpd_req_t *req)
 {
     char query[64];
+    sParametresHorloge params = {0}; // Utilisation de la structure correcte
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
     {
         char mode_val[8];
@@ -128,12 +134,17 @@ esp_err_t setModeSansWifiHandler(httpd_req_t *req)
             int mode_int = atoi(mode_val);
             if (mode_int <= MODE_ARRET)
             {
-                modeActuel = (eModeAffichage)mode_int;
-                ESP_LOGI(TAG, "ModeActuel mis à jour à : %d", modeActuel);
+                params.modeActuel = (eModeAffichage)mode_int; // Utilisation de la structure
+                ESP_LOGI(TAG, "ModeActuel mis à jour à : %d", params.modeActuel);
 
-                if (xQueueSend(fileMode, &modeActuel, portMAX_DELAY) != pdPASS)
+                // Envoi de la structure complète dans la queue
+                if (xQueueSend(fileParamHorloge, &params, portMAX_DELAY) != pdPASS)
                 {
-                    ESP_LOGE(TAG, "Erreur d'envoi du mode dans la Queue");
+                    ESP_LOGE(TAG, "Erreur d'envoi des paramètres dans la queue fileParamHorloge.");
+                }
+                else
+                {
+                    ESP_LOGI(TAG, "Paramètres envoyés dans la queue fileParamHorloge.");
                 }
             }
             else
@@ -147,50 +158,97 @@ esp_err_t setModeSansWifiHandler(httpd_req_t *req)
     return ESP_OK;
 }
 
+void urlDecode(char *src, size_t srcSize)
+{
+    char *dest = src;
+    while (*src && srcSize--)
+    {
+        if (*src == '%' && src[1] && src[2])
+        {
+            int value;
+            sscanf(src + 1, "%2x", &value);
+            *dest++ = (char)value;
+            src += 3;
+        }
+        else if (*src == '+')
+        {
+            *dest++ = ' ';
+            src++;
+        }
+        else
+        {
+            *dest++ = *src++;
+        }
+    }
+    *dest = '\0';
+}
+
 esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req)
 {
     char query[128];
     sParametresHorloge params = {0};
+    params.nbVille = 1;
 
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
     {
+        // Extraction de l'heure avec décodage URL
         if (httpd_query_key_value(query, "heure", params.heure, sizeof(params.heure)) == ESP_OK)
-            ESP_LOGI(TAG, "Heure: %s", params.heure);
+        {
+            urlDecode(params.heure, sizeof(params.heure)); // Décodage de l'URL
+            ESP_LOGI(TAG, "Heure reçue (décodée): %s", params.heure);
+
+            // Extraire l'heure et l'envoyer dans fileHeure
+            sTemps heureActuelle = {0};
+            if (sscanf(params.heure, "%d:%d", &heureActuelle.heures, &heureActuelle.minutes) == 2)
+            {
+                heureActuelle.secondes = 0; // Forcer les secondes à 0
+                if (xQueueSend(fileHeure, &heureActuelle, pdMS_TO_TICKS(10)) != pdPASS)
+                {
+                    ESP_LOGE(TAG, "Erreur d'envoi de l'heure dans la queue fileHeure.");
+                }
+                else
+                {
+                    ESP_LOGI(TAG, "Heure envoyée dans la queue fileHeure : %02d:%02d:%02d", 
+                             heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
+                }
+            }
+            else
+            {
+                ESP_LOGW(TAG, "Format d'heure non valide après décodage : %s", params.heure);
+            }
+        }
         else
+        {
             ESP_LOGW(TAG, "Paramètre 'heure' non reçu.");
+        }
 
-        if (httpd_query_key_value(query, "couleurHeures", params.couleurHeures, sizeof(params.couleurHeures)) == ESP_OK)
-            ESP_LOGI(TAG, "Couleur Heures: %s", params.couleurHeures);
-        else
-            ESP_LOGW(TAG, "Paramètre 'couleurHeures' non reçu.");
-
-        if (httpd_query_key_value(query, "couleurMinutes", params.couleurMinutes, sizeof(params.couleurMinutes)) == ESP_OK)
-            ESP_LOGI(TAG, "Couleur Minutes: %s", params.couleurMinutes);
-        else
-            ESP_LOGW(TAG, "Paramètre 'couleurMinutes' non reçu.");
-
-        if (httpd_query_key_value(query, "couleurSecondes", params.couleurSecondes, sizeof(params.couleurSecondes)) == ESP_OK)
-            ESP_LOGI(TAG, "Couleur Secondes: %s", params.couleurSecondes);
-        else
-            ESP_LOGW(TAG, "Paramètre 'couleurSecondes' non reçu.");
-
+        // Extraction des autres paramètres d'affichage
+        if (httpd_query_key_value(query, "couleurHeures", params.couleurHeuresActuelles, sizeof(params.couleurHeuresActuelles)) == ESP_OK)
+            ESP_LOGI(TAG, "Couleur Heures: %s", params.couleurHeuresActuelles);
+        
+        if (httpd_query_key_value(query, "couleurMinutes", params.couleurMinutesActuelles, sizeof(params.couleurMinutesActuelles)) == ESP_OK)
+            ESP_LOGI(TAG, "Couleur Minutes: %s", params.couleurMinutesActuelles);
+        
+        if (httpd_query_key_value(query, "couleurSecondes", params.couleurSecondesActuelles, sizeof(params.couleurSecondesActuelles)) == ESP_OK)
+            ESP_LOGI(TAG, "Couleur Secondes: %s", params.couleurSecondesActuelles);
+        
         if (httpd_query_key_value(query, "affichageTemperature", params.affichageTemperature, sizeof(params.affichageTemperature)) == ESP_OK)
             ESP_LOGI(TAG, "Affichage Temp: %s", params.affichageTemperature);
-        else
-            ESP_LOGW(TAG, "Paramètre 'affichageTemperature' non reçu.");
-
+        
         if (httpd_query_key_value(query, "affichageType", params.affichageType, sizeof(params.affichageType)) == ESP_OK)
             ESP_LOGI(TAG, "Affichage Type: %s", params.affichageType);
-        else
-            ESP_LOGW(TAG, "Paramètre 'affichageType' non reçu.");
-
-        setParametresHorloge(&params);
-        ESP_LOGI(TAG, "Les paramètres de l'horloge ont été mis à jour.");
-        modeActuel = MODE_HORLOGE;
-        if (xQueueSend(fileMode, &modeActuel, portMAX_DELAY) != pdPASS)
+        
+        // Envoi des paramètres d'affichage dans fileParamHorloge
+        if (xQueueSend(fileParamHorloge, &params, pdMS_TO_TICKS(10)) != pdPASS)
         {
-            ESP_LOGE(TAG, "Erreur d'envoi du mode dans la Queue");
+            ESP_LOGE(TAG, "Erreur d'envoi des paramètres dans la queue fileParamHorloge.");
         }
+        else
+        {
+            ESP_LOGI(TAG, "Paramètres envoyés dans la queue fileParamHorloge.");
+        }
+
+        ESP_LOGI(TAG, "Les paramètres de l'horloge ont été mis à jour.");
     }
     else
     {
