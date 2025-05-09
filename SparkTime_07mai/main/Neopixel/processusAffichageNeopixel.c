@@ -10,6 +10,7 @@
 
 #include "processusAffichageNeopixel.h"
 #include "interfaceGestionNeopixel.h"
+#include "GestionHeure/processusGestionHeure.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <stdio.h>
@@ -19,9 +20,10 @@
 static SemaphoreHandle_t npMutex = NULL;
 static const char *TAG = "processusAffichageNeopixel";
 extern QueueHandle_t fileParamHorloge;
+extern QueueHandle_t fileHeure;
 
 // eModeAffichage modeActuel = MODE_ARCENCIEL;
-static sParametresHorloge parametresHorloge = {0};
+sParametresHorloge parametresHorloge = {0};
 
 void setParametresHorloge(sParametresHorloge *params)
 {
@@ -67,8 +69,8 @@ void task_AffichageNeopixel(void *pvParameter)
         if (xQueueReceive(fileParamHorloge, &nouveauxParametres, pdMS_TO_TICKS(10)) == pdPASS)
         {
             ESP_LOGI(TAG, "Nouveaux paramètres reçus dans task_AffichageNeopixel");
-            setParametresHorloge(&nouveauxParametres);  // Met à jour les paramètres globaux
-            mode = nouveauxParametres.modeActuel;        // Met à jour le mode actuel
+            setParametresHorloge(&nouveauxParametres); // Met à jour les paramètres globaux
+            mode = nouveauxParametres.modeActuel;      // Met à jour le mode actuel
         }
 
         if (xSemaphoreTake(npMutex, portMAX_DELAY) == pdTRUE)
@@ -180,10 +182,27 @@ void task_AffichageNeopixel(void *pvParameter)
                 ESP_LOGI(TAG, "Entrée dans MODE_HORLOGE");
                 vTaskDelay(pdMS_TO_TICKS(1));
 
+                sTemps heureActuelle = {0};
+                if (xQueueReceive(fileHeure, &heureActuelle, pdMS_TO_TICKS(500)) == pdPASS)
+                {
+                    ESP_LOGI(TAG, "Heure actuelle dans Neopixel: %02d:%02d:%02d",
+                             heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
+                }
+                else
+                {
+                    ESP_LOGW(TAG, "Impossible de lire l'heure.");
+                }
+
                 int intensiteLumineuse = determinerIntensiteNeopixelHorloge(&parametresHorloge);
                 choixCouleur(parametresHorloge.couleurHeuresActuelles, 0, pixel, intensiteLumineuse);
-                choixCouleur(parametresHorloge.couleurMinutesActuelles, 1, pixel, intensiteLumineuse);
-
+                if (heureActuelle.secondes % 2 == 0)
+                {
+                    choixCouleur(parametresHorloge.couleurMinutesActuelles, 1, pixel, intensiteLumineuse);
+                }
+                else
+                {
+                    choixCouleur(parametresHorloge.couleurSecondesActuelles, 1, pixel, intensiteLumineuse);
+                }
                 neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
 
                 ESP_LOGI(TAG, "Sortie du MODE_HORLOGE");

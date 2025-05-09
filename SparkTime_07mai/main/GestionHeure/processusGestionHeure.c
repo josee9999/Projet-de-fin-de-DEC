@@ -29,7 +29,7 @@ void task_GestionHeure(void *pvParameters)
         sTemps nouvelleHeure;
         if (xQueueReceive(fileHeure, &nouvelleHeure, 0) == pdPASS)
         {
-            ESP_LOGI(TAG, "Nouvelle heure reçue: %02d:%02d:%02d",
+            ESP_LOGI("GestionHeure", "Nouvelle heure reçue: %02d:%02d:%02d",
                      nouvelleHeure.heures, nouvelleHeure.minutes, nouvelleHeure.secondes);
             heureActuelle = nouvelleHeure;
         }
@@ -52,7 +52,13 @@ void task_GestionHeure(void *pvParameters)
             }
         }
 
-        ESP_LOGI(TAG, "Heure actuelle: %02d:%02d:%02d",
+        // Envoyer l'heure mise à jour dans la file
+        if (xQueueOverwrite(fileHeure, &heureActuelle) != pdPASS)
+        {
+            ESP_LOGW("GestionHeure", "Impossible d'envoyer l'heure dans la file.");
+        }
+
+        ESP_LOGI("GestionHeure", "Heure actuelle: %02d:%02d:%02d",
                  heureActuelle.heures,
                  heureActuelle.minutes,
                  heureActuelle.secondes);
