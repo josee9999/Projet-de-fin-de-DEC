@@ -5,11 +5,12 @@
     "idf.openOcdConfigs": [
         "board/esp32-wrover-kit-3.3v.cfg"
     ],
-    "idf.portWin": "COM21",
+    "idf.portWin": "COM22",
     "idf.toolsPathWin": "C:\\Users\\1622713\\.espressif",
     "idf.flashType": "UART",
     "files.associations": {
         "processusaffichageneopixel.h": "c",
-        "processusgestionheure.h": "c"
+        "processusgestionheure.h": "c",
+        "stdio.h": "c"
     }
 }

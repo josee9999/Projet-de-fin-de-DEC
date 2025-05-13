@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
+#include "driver\gpio.h"
 
 static SemaphoreHandle_t npMutex = NULL;
 static const char *TAG = "processusAffichageNeopixel";
@@ -139,12 +140,13 @@ void task_AffichageNeopixel(void *pvParameter)
 
                     couleurPixel[COULEUR_BLANC][NIVEAU_PALE],
                     couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
-                    couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN], // REMETTRE A VIF QUAND 5V DISPO
+                    couleurPixel[COULEUR_BLANC][NIVEAU_VIF], 
 
                     COULEUR_ETEINTE};
 
-                const int nbÉtapes = sizeof(sequenceTest) / sizeof(sequenceTest[0]);
-
+                //const int nbEtapes = sizeof(sequenceTest) / sizeof(sequenceTest[0]);
+                gpio_set_level(ENABLE_SEC, 0);
+                //gpio_set_level(ENABLE_MIN_HRS, 0);
                 for (int i = 0; i < NP_SEC_COUNT; i++)
                 {
                     pixel[i].index = i;
@@ -170,6 +172,9 @@ void task_AffichageNeopixel(void *pvParameter)
                 }
                 else
                 {
+                    gpio_set_level(ENABLE_SEC, 1);
+                    //gpio_set_level(ENABLE_MIN_HRS, 0);
+
                     ledIndex = 0;
                     indexCouleur = 0;
                     mode = MODE_ARRET;
@@ -182,6 +187,7 @@ void task_AffichageNeopixel(void *pvParameter)
                 ESP_LOGI(TAG, "Entrée dans MODE_HORLOGE");
                 vTaskDelay(pdMS_TO_TICKS(1));
 
+                
                 sTemps heureActuelle = {0};
                 if (xQueueReceive(fileHeure, &heureActuelle, pdMS_TO_TICKS(500)) == pdPASS)
                 {

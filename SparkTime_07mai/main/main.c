@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver\gpio.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 
@@ -22,28 +23,34 @@ eModeAffichage modeActuel = MODE_ARRET;
 
 void app_main(void)
 {
-    
+    gpio_reset_pin(ENABLE_SEC);
+    //gpio_reset_pin(ENABLE_MIN_HRS);
+    gpio_set_direction(ENABLE_SEC, GPIO_MODE_OUTPUT);
+    //gpio_set_direction(ENABLE_MIN_HRS, GPIO_MODE_OUTPUT);
+    gpio_set_level(ENABLE_SEC, 1);
+    //gpio_set_level(ENABLE_MIN_HRS, 1);
+        
     initialiserProcessusAffichageNeopixel();
     ESP_LOGI(TAG, "Démarrage du Wi-Fi en mode AP");
     demarrerWifiAP();
 
-    //sParametresHorloge
+    // sParametresHorloge
     fileParamHorloge = xQueueCreate(5, sizeof(sParametresHorloge));
-    if (fileParamHorloge == NULL) {
+    if (fileParamHorloge == NULL)
+    {
         ESP_LOGE(TAG, "Erreur de création de la queue fileParamHorloge");
         return;
     }
     ESP_LOGI(TAG, "Queue fileParamHorloge créée avec succès.");
-    
-    //fileHeure
+
+    // fileHeure
     fileHeure = xQueueCreate(1, sizeof(sTemps));
-    if (fileHeure == NULL) {
+    if (fileHeure == NULL)
+    {
         ESP_LOGE(TAG, "Erreur de création de la queue fileHeure");
         return;
     }
     ESP_LOGI(TAG, "Queue fileHeure créée avec succès.");
-
-
 
     ESP_LOGI(TAG, "Création de la tâche Serveur Web");
     xTaskCreatePinnedToCore(task_serveurWeb, "Tache Serveur Web", 4096, NULL, 5, NULL, 0);
@@ -62,4 +69,3 @@ void app_main(void)
 
     ESP_LOGI("Main", "Tâche GestionHeure démarrée sur le Core 0");
 }
-
