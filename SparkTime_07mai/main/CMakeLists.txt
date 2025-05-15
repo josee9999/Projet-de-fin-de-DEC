@@ -18,6 +18,7 @@ idf_component_register(
                     REQUIRES 
                         driver 
                         zorxx__neopixel
+                        esp__neopixel
                         esp_http_server
                         nvs_flash
                         esp_event

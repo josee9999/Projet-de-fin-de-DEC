@@ -17,6 +17,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "driver\gpio.h"
+#include "main.h"
 
 static SemaphoreHandle_t npMutex = NULL;
 static const char *TAG = "processusAffichageNeopixel";
@@ -42,27 +43,39 @@ sParametresHorloge getParametresHorloge(void)
 void task_AffichageNeopixel(void *pvParameter)
 {
     ESP_LOGI(TAG, "Tâche Neopixel démarrée");
-    tNeopixelContext np_ctx = (tNeopixelContext)pvParameter;
-    if (np_ctx == NULL)
+    sNeopixelContexts *npContexts = (sNeopixelContexts *)pvParameter;
+
+    if (npContexts == NULL || npContexts->npCtxSec == NULL || npContexts->npCtxMinHrs == NULL)
     {
-        ESP_LOGE(TAG, "Erreur : Contexte Neopixel non initialisé.");
-        vTaskDelete(NULL); // Supprime la tâche pour éviter le crash
+        ESP_LOGE(TAG, "Erreur : Contextes Neopixel non initialisés.");
+        vTaskDelete(NULL);
         return;
     }
-    tNeopixel pixel[NP_SEC_COUNT];
-    int offset = 0;
-    int indexCouleur = 0;
-    int ledIndex = 0;
+    tNeopixel pixelSec[NP_SEC_COUNT];
+    tNeopixel pixelMinHrs[NP_MIN_HRS_COUNT];
+
+    int offsetSec = 0;
+    int indexCouleurSec = 0;
+    int ledIndexSec = 0;
+
+    int offsetMinHrs = 0;
+    int indexCouleurMinHrs = 0;
+    int ledIndexMinHrs = 0;
 
     eModeAffichage mode = MODE_ARRET;
 
     for (int i = 0; i < NP_SEC_COUNT; i++)
     {
-        pixel[i].index = i;
-        pixel[i].rgb = COULEUR_ETEINTE;
+        pixelSec[i].index = i;
+        pixelSec[i].rgb = COULEUR_ETEINTE;
+    };
+    for (int i = 0; i < NP_MIN_HRS_COUNT; i++)
+    {
+        pixelMinHrs[i].index = i;
+        pixelMinHrs[i].rgb = COULEUR_ETEINTE;
     };
 
-    neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+    neopixel_setPixelInterface(npContexts->npCtxSec, pixelSec, NP_SEC_COUNT);
 
     while (1)
     {
@@ -79,48 +92,65 @@ void task_AffichageNeopixel(void *pvParameter)
             switch (mode)
             {
             case MODE_ARRET:
+                gpio_set_level(GPIO_NUM_27, 0);
+                gpio_set_level(GPIO_NUM_26, 0);
                 for (int i = 0; i < NP_SEC_COUNT; i++)
                 {
-                    pixel[i].index = i;
-                    pixel[i].rgb = COULEUR_ETEINTE;
+                    pixelSec[i].index = i;
+                    pixelSec[i].rgb = COULEUR_ETEINTE;
                 };
-                neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
-                vTaskDelay(pdMS_TO_TICKS(500));
+                for (int i = 0; i < NP_MIN_HRS_COUNT; i++)
+                {
+                    pixelMinHrs[i].index = i;
+                    pixelMinHrs[i].rgb = COULEUR_ETEINTE;
+                };
+                neopixel_setPixelInterface(npContexts->npCtxSec, pixelSec, NP_SEC_COUNT);
+                neopixel_setPixelInterface(npContexts->npCtxMinHrs, pixelMinHrs, NP_MIN_HRS_COUNT);
+
+                gpio_set_level(GPIO_NUM_27, 1);
+                gpio_set_level(GPIO_NUM_26, 1);
+                vTaskDelay(pdMS_TO_TICKS(1000));
 
                 break;
             case MODE_ARCENCIEL:
-                for (int i = NP_SEC_COUNT - 1; i > 0; i--)
-                {
-                    pixel[i].rgb = pixel[i - 1].rgb;
-                }
+                /* gpio_set_level(GPIO_NUM_27, 0);
+                 gpio_set_level(GPIO_NUM_26, 0);
+                 for (int i = NP_SEC_COUNT - 1; i > 0; i--)
+                 {
+                     pixelSec[i].rgb = pixelSec[i - 1].rgb;
+                 }
 
-                // Ajoute la nouvelle couleur en tête (ou éteint si on est à la fin)
-                if (offset < countCouleurPixel)
-                {
-                    pixel[0].rgb = couleurPixel[offset][NIVEAU_PALE];
-                }
-                else
-                {
-                    pixel[0].rgb = COULEUR_ETEINTE;
-                }
+                 // Ajoute la nouvelle couleur en tête (ou éteint si on est à la fin)
+                 if (offset < countCouleurPixel)
+                 {
+                     pixelSec[0].rgb = couleurPixel[offset][NIVEAU_PALE];
+                 }
+                 else
+                 {
+                     pixelSec[0].rgb = COULEUR_ETEINTE;
+                 }
 
-                // Met à jour les index (nécessaire pour certaines libs Neopixel)
-                for (int i = 0; i < NP_SEC_COUNT; i++)
-                {
-                    pixel[i].index = i;
-                }
+                 // Met à jour les index (nécessaire pour certaines libs Neopixel)
+                 for (int i = 0; i < NP_SEC_COUNT; i++)
+                 {
+                     pixelSec[i].index = i;
+                 }
 
-                neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+                 neopixel_setPixelInterface(np_ctx, pixelSec, NP_SEC_COUNT);
 
-                offset++;
+                 offset++;
 
-                if (offset >= countCouleurPixel + NP_SEC_COUNT)
-                {
-                    ESP_LOGI(TAG, "Arc-en-ciel terminé, retour au mode ARRET");
-                    offset = 0;
-                    mode = MODE_ARRET;
-                }
+                 if (offset >= countCouleurPixel + NP_SEC_COUNT)
+                 {
+                     gpio_set_level(GPIO_NUM_27, 1);
+                     gpio_set_level(GPIO_NUM_26, 1);
+                     ESP_LOGI(TAG, "ENABLE_SEC: %d", gpio_get_level(ENABLE_SEC));
+                     ESP_LOGI(TAG, "Arc-en-ciel terminé, retour au mode ARRET");
+                     offset = 0;
 
+                     mode = MODE_ARRET;
+                 }
+ */
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 break;
 
@@ -140,54 +170,78 @@ void task_AffichageNeopixel(void *pvParameter)
 
                     couleurPixel[COULEUR_BLANC][NIVEAU_PALE],
                     couleurPixel[COULEUR_BLANC][NIVEAU_MOYEN],
-                    couleurPixel[COULEUR_BLANC][NIVEAU_VIF], 
+                    couleurPixel[COULEUR_BLANC][NIVEAU_VIF],
 
                     COULEUR_ETEINTE};
 
                 //const int nbEtapes = sizeof(sequenceTest) / sizeof(sequenceTest[0]);
-                gpio_set_level(ENABLE_SEC, 0);
-                //gpio_set_level(ENABLE_MIN_HRS, 0);
+                gpio_set_level(GPIO_NUM_26, 0);
+                gpio_set_level(GPIO_NUM_27, 0);
+
                 for (int i = 0; i < NP_SEC_COUNT; i++)
                 {
-                    pixel[i].index = i;
-                    pixel[i].rgb = COULEUR_ETEINTE;
+                    pixelSec[i].index = i;
+                    pixelSec[i].rgb = COULEUR_ETEINTE;
                 }
-                ESP_LOGI(TAG, "Début du test : ledIndex = %d, indexCouleur = %d", ledIndex, indexCouleur);
-                if (ledIndex < NP_SEC_COUNT)
+                for (int i = 0; i < NP_MIN_HRS_COUNT; i++)
                 {
-                    if (indexCouleur < 13)
-                    {
-                        pixel[ledIndex].rgb = sequenceTest[indexCouleur];
-                        ESP_LOGI(TAG, "LED %d, couleur appliquée : 0x%08lX", ledIndex, pixel[ledIndex].rgb);
+                    pixelMinHrs[i].index = i;
+                    pixelMinHrs[i].rgb = COULEUR_ETEINTE;
+                }
 
-                        neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
-                        indexCouleur++;
+                ESP_LOGI(TAG, "Début du test : ledIndexSec = %d, indexCouleurSec = %d", ledIndexSec, indexCouleurSec);
+                if (ledIndexSec < NP_SEC_COUNT)
+                {
+                    if (indexCouleurSec < 13)
+                    {
+                        pixelSec[ledIndexSec].rgb = sequenceTest[indexCouleurSec];
+                        ESP_LOGI(TAG, "LED %d, couleur appliquée : 0x%08lX", ledIndexSec, pixelSec[ledIndexSec].rgb);
+
+                        neopixel_setPixelInterface(npContexts->npCtxSec, pixelSec, NP_SEC_COUNT);
+                        indexCouleurSec++;
                     }
                     else
                     {
-                        indexCouleur = 0;
-                        ledIndex++;
-                        ESP_LOGI(TAG, "Passage à la LED suivante : ledIndex = %d", ledIndex);
+                        indexCouleurSec = 0;
+                        ledIndexSec++;
+                        ESP_LOGI(TAG, "Passage à la LED suivante : ledIndex = %d", ledIndexSec);
+                    }
+                }else if(ledIndexMinHrs < NP_MIN_HRS_COUNT)
+                {
+                    if (indexCouleurMinHrs < 13)
+                    {
+                        pixelMinHrs[ledIndexMinHrs].rgb = sequenceTest[indexCouleurMinHrs];
+                        ESP_LOGI(TAG, "LED %d, couleur appliquée : 0x%08lX", ledIndexMinHrs, pixelMinHrs[ledIndexMinHrs].rgb);
+
+                        neopixel_setPixelInterface(npContexts->npCtxMinHrs, pixelMinHrs, NP_MIN_HRS_COUNT);
+                        indexCouleurMinHrs++;
+                    }
+                    else
+                    {
+                        indexCouleurMinHrs = 0;
+                        ledIndexMinHrs++;
+                        ESP_LOGI(TAG, "Passage à la LED suivante : ledIndex = %d", ledIndexMinHrs);
                     }
                 }
                 else
                 {
-                    gpio_set_level(ENABLE_SEC, 1);
-                    //gpio_set_level(ENABLE_MIN_HRS, 0);
+                    gpio_set_level(GPIO_NUM_26, 1);
+                    gpio_set_level(GPIO_NUM_27, 1);
 
-                    ledIndex = 0;
-                    indexCouleur = 0;
+                    ledIndexSec = 0;
+                    indexCouleurSec = 0;
+                    ledIndexMinHrs = 0;
+                    indexCouleurMinHrs = 0;
                     mode = MODE_ARRET;
                     ESP_LOGI(TAG, "Test terminé, retour au mode ARRET");
                 }
-                vTaskDelay(pdMS_TO_TICKS(500));
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 break;
 
             case MODE_HORLOGE:
-                ESP_LOGI(TAG, "Entrée dans MODE_HORLOGE");
+                /*ESP_LOGI(TAG, "Entrée dans MODE_HORLOGE");
                 vTaskDelay(pdMS_TO_TICKS(1));
 
-                
                 sTemps heureActuelle = {0};
                 if (xQueueReceive(fileHeure, &heureActuelle, pdMS_TO_TICKS(500)) == pdPASS)
                 {
@@ -200,18 +254,18 @@ void task_AffichageNeopixel(void *pvParameter)
                 }
 
                 int intensiteLumineuse = determinerIntensiteNeopixelHorloge(&parametresHorloge);
-                choixCouleur(parametresHorloge.couleurHeuresActuelles, 0, pixel, intensiteLumineuse);
+                choixCouleur(parametresHorloge.couleurHeuresActuelles, 0, pixelSec, intensiteLumineuse);
                 if (heureActuelle.secondes % 2 == 0)
                 {
-                    choixCouleur(parametresHorloge.couleurMinutesActuelles, 1, pixel, intensiteLumineuse);
+                    choixCouleur(parametresHorloge.couleurMinutesActuelles, 1, pixelSec, intensiteLumineuse);
                 }
                 else
                 {
-                    choixCouleur(parametresHorloge.couleurSecondesActuelles, 1, pixel, intensiteLumineuse);
+                    choixCouleur(parametresHorloge.couleurSecondesActuelles, 1, pixelSec, intensiteLumineuse);
                 }
-                neopixel_setPixelInterface(np_ctx, pixel, NP_SEC_COUNT);
+                neopixel_setPixelInterface(np_ctx, pixelSec, NP_SEC_COUNT);
 
-                ESP_LOGI(TAG, "Sortie du MODE_HORLOGE");
+                ESP_LOGI(TAG, "Sortie du MODE_HORLOGE");*/
                 vTaskDelay(pdMS_TO_TICKS(500));
                 break;
 
