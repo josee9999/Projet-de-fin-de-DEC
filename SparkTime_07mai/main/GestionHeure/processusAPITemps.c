@@ -18,6 +18,10 @@
 static const char *TAG = "ProcessusAPITemps";
 static const char *BASE_URL_TIMEZONE = "http://worldtimeapi.org/api/timezone/";
 static const char *BASE_URL_IP = "http://worldtimeapi.org/api/ip";
+static bool est_ville_principale;  // Variable globale pour suivre le contexte
+
+// Déclaration anticipée du gestionnaire d'événements
+static esp_err_t http_event_handler(esp_http_client_event_t *evt);
 
 // Structure pour stocker les données de temps reçues de l'API
 typedef struct {
@@ -28,11 +32,15 @@ typedef struct {
     bool estVillePrincipale;
 } sTempsAPI;
 
+// Déclarations des prototypes de fonctions
+esp_err_t obtenirHeureIP(void);
+esp_err_t obtenirHeureVille(const char *timezone, bool est_principale);
+
+// Implémentation des fonctions
 static esp_err_t http_event_handler(esp_http_client_event_t *evt)
 {
     static char *output_buffer;
     static int output_len;
-    static bool est_ville_principale;  // Variable statique pour stocker le contexte
 
     switch(evt->event_id) {
         case HTTP_EVENT_ON_DATA:
@@ -123,6 +131,7 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
 esp_err_t obtenirHeureIP(void)
 {
     ESP_LOGI(TAG, "Tentative d'obtention de l'heure via IP: %s", BASE_URL_IP);
+    est_ville_principale = true;  // Par défaut, l'IP est considérée comme ville principale
     
     esp_http_client_config_t config = {
         .url = BASE_URL_IP,
@@ -149,17 +158,22 @@ esp_err_t obtenirHeureIP(void)
 
 esp_err_t obtenirHeureVille(const char *timezone, bool est_principale)
 {
-    if (timezone == NULL || strcmp(timezone, "auto") == 0) {
+    if (!timezone) {
+        ESP_LOGE(TAG, "Timezone invalide");
+        return ESP_FAIL;
+    }
+
+    est_ville_principale = est_principale;
+    
+    if (strcmp(timezone, "auto") == 0) {
         ESP_LOGI(TAG, "Mode automatique détecté, utilisation de l'API IP");
-        est_ville_principale = est_principale;  // Définir le contexte pour le handler
         return obtenirHeureIP();
     }
 
     char url[128];
     snprintf(url, sizeof(url), "%s%s", BASE_URL_TIMEZONE, timezone);
-    ESP_LOGI(TAG, "Tentative d'obtention de l'heure pour le fuseau horaire: %s", url);
-
-    est_ville_principale = est_principale;  // Définir le contexte pour le handler
+    ESP_LOGI(TAG, "Tentative d'obtention de l'heure pour le fuseau horaire: %s (ville %s)", 
+             url, est_principale ? "principale" : "secondaire");
 
     esp_http_client_config_t config = {
         .url = url,
@@ -168,16 +182,14 @@ esp_err_t obtenirHeureVille(const char *timezone, bool est_principale)
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
-    if (client == NULL) {
-        ESP_LOGE(TAG, "Échec d'initialisation du client HTTP pour le fuseau horaire");
+    if (!client) {
+        ESP_LOGE(TAG, "Échec d'initialisation du client HTTP");
         return ESP_FAIL;
     }
 
     esp_err_t err = esp_http_client_perform(client);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Échec de la requête HTTP fuseau horaire: %s", esp_err_to_name(err));
-    } else {
-        ESP_LOGI(TAG, "Requête HTTP fuseau horaire effectuée avec succès");
+        ESP_LOGE(TAG, "Échec de la requête HTTP: %s", esp_err_to_name(err));
     }
 
     esp_http_client_cleanup(client);

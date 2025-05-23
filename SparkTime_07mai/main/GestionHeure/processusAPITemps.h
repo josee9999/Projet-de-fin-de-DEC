@@ -21,7 +21,8 @@
 extern QueueHandle_t fileHeure;
 extern QueueHandle_t fileParamHorloge;
 
+// Prototypes des fonctions
 void tache_APITemps(void *pvParameters);
-esp_err_t obtenirHeureVille(const char *timezone);
+esp_err_t obtenirHeureVille(const char *timezone, bool est_principale);
 
-#endif
+#endif // PROCESSUS_API_TEMPS_H
