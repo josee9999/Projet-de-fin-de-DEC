@@ -13,6 +13,7 @@
 #include "processusAffichageNeopixel.h"
 #include "piloteServeurWeb.h"
 #include <stdio.h>
+#include <string.h>
 
 const char *styleCSS =
     "<style>"
@@ -101,10 +102,16 @@ const char *optionsCouleur =
     "<option value=\"rouge\">Rouge</option>"
     "<option value=\"orange\">Orange</option>"
     "<option value=\"jaune\">Jaune</option>"
+    "<option value=\"jaune-vert\">Jaune-vert</option>"
     "<option value=\"vert\">Vert</option>"
+    "<option value=\"vert-bleu\">Vert-bleu</option>"
+    "<option value=\"turquoise\">Turquoise</option>"
     "<option value=\"bleu\">Bleu</option>"
     "<option value=\"indigo\">Indigo</option>"
-    "<option value=\"violet\">Violet</option>";
+    "<option value=\"violet\">Violet</option>"
+    "<option value=\"mauve\">Mauve</option>"
+    "<option value=\"rose\">Rose</option>"
+    "<option value=\"blanc\">Blanc</option>";
 
 const char *jsPageSansWifi =
     "<script>"
@@ -137,264 +144,323 @@ const char *jsPageSansWifi =
 
 const char *jsPageAvecWifi =
     "<script>"
-    "document.getElementById(\"formPerso\").onsubmit = function(e) {"
-    "e.preventDefault(); "
-
-    "var villeActuelle = document.getElementById(\"villeActuelle\").value;"
-    "var ville2e = document.getElementById(\"ville2e\").value;"
-    "var couleurHeuresActuels = document.getElementById(\"couleurHeuresActuels\").value;"
-    "var couleurMinutesActuels = document.getElementById(\"couleurMinutesActuels\").value;"
-    "var couleurSecondes = document.getElementById(\"couleurSecondes\").value;"
-    "var couleurHeures2e = document.getElementById(\"couleurHeures2e\").value;"
-    "var couleurMinutes2e = document.getElementById(\"couleurMinutes2e\").value;"
-    "var affichageTemperature = document.getElementById(\"affichageTemperature\").checked;"
-
-    "var xhr = new XMLHttpRequest();"
-    "xhr.open(\"GET\", \"/setHorlogeAvecWifi?villeActuelle=\" + encodeURIComponent(villeActuelle) + "
-    "       \"&ville2e=\" + encodeURIComponent(ville2e) + "
-    "       \"&couleurHeuresActuels=\" + encodeURIComponent(couleurHeuresActuels) +"
-    "       \"&couleurMinutesActuels=\" + encodeURIComponent(couleurMinutesActuels) +"
-    "       \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) +"
-    "       \"&couleurHeures2e=\" + encodeURIComponent(couleurHeures2e) +"
-    "       \"&couleurMinutes2e=\" + encodeURIComponent(couleurMinutes2e) +"
-    "       \"&affichageTemperature=\" + affichageTemperature, true);"
-    "  xhr.send(); "
-    "};"
-
     "document.getElementById(\"formMode\").onsubmit = function(e) {"
     "  e.preventDefault();"
     "  var mode = document.getElementById(\"mode\").value;"
+    "  if (!mode) {"
+    "    alert('Veuillez sélectionner un mode');"
+    "    return false;"
+    "  }"
     "  var xhr = new XMLHttpRequest();"
     "  xhr.open(\"GET\", \"/setModeAvecWifi?mode=\" + mode, true);"
+    "  xhr.onload = function() {"
+    "    if (xhr.status === 200) {"
+    "      alert('Mode changé avec succès');"
+    "    } else {"
+    "      alert('Erreur lors du changement de mode');"
+    "    }"
+    "  };"
+    "  xhr.send();"
+    "};"
+
+    "document.getElementById(\"formPerso\").onsubmit = function(e) {"
+    "  e.preventDefault();"
+    "  var villeActuelle = document.getElementById(\"villeActuelle\").value;"
+    "  var ville2e = document.getElementById(\"ville2e\").value;"
+    "  var couleurHeuresActuels = document.getElementById(\"couleurHeuresActuels\").value;"
+    "  var couleurMinutesActuels = document.getElementById(\"couleurMinutesActuels\").value;"
+    "  var couleurSecondes = document.getElementById(\"couleurSecondes\").value;"
+    "  var couleurHeures2e = document.getElementById(\"couleurHeures2e\").value;"
+    "  var couleurMinutes2e = document.getElementById(\"couleurMinutes2e\").value;"
+    "  var affichageTemperature = document.getElementById(\"affichageTemperature\").checked;"
+    "  var affichageType = document.querySelector('input[name=\"affichageType\"]').value;"
+
+    "  if (!villeActuelle || !ville2e || !couleurHeuresActuels || !couleurMinutesActuels || "
+    "      !couleurSecondes || !couleurHeures2e || !couleurMinutes2e) {"
+    "    alert('Veuillez remplir tous les champs requis');"
+    "    return false;"
+    "  }"
+
+    "  if (villeActuelle === ville2e) {"
+    "    alert('Veuillez choisir deux villes différentes');"
+    "    return false;"
+    "  }"
+
+    "  var xhr = new XMLHttpRequest();"
+    "  xhr.open(\"GET\", \"/setHorlogeAvecWifi?villeActuelle=\" + encodeURIComponent(villeActuelle) + "
+    "    \"&ville2e=\" + encodeURIComponent(ville2e) + "
+    "    \"&couleurHeuresActuels=\" + encodeURIComponent(couleurHeuresActuels) + "
+    "    \"&couleurMinutesActuels=\" + encodeURIComponent(couleurMinutesActuels) + "
+    "    \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) + "
+    "    \"&couleurHeures2e=\" + encodeURIComponent(couleurHeures2e) + "
+    "    \"&couleurMinutes2e=\" + encodeURIComponent(couleurMinutes2e) + "
+    "    \"&affichageTemperature=\" + affichageTemperature + "
+    "    \"&affichageType=\" + encodeURIComponent(affichageType), true);"
+
+    "  xhr.onload = function() {"
+    "    if (xhr.status === 200) {"
+    "      alert('Configuration enregistrée avec succès');"
+    "    } else {"
+    "      alert('Erreur lors de l\\'enregistrement de la configuration');"
+    "    }"
+    "  };"
+
+    "  xhr.onerror = function() {"
+    "    alert('Erreur de connexion au serveur');"
+    "  };"
+
     "  xhr.send();"
     "};"
     "</script>";
 
+const char *htmlAvecWifiDebut =
+    "<html>"
+    "<head>"
+    "<meta charset=\"UTF-8\">"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+
+const char *htmlAvecWifiContenu =
+    "<div class=\"conteneurFormulaire\">"
+    "<h1>SparkTime - version avec wifi</h1>"
+    "<h2>Personnalisation de l'horloge</h2><br>"
+    "<form id=\"formPerso\">"
+    "<select name=\"villeActuelle\" id=\"villeActuelle\" required>"
+    "<option value=\"\" disabled selected hidden>— Choisir la 1<sup>e</sup> ville —</option>"
+    "<option value=\"auto\">Emplacement actuel</option>"
+    "<option value=\"America/Montreal\">Montréal</option>"
+    "<option value=\"America/New_York\">New York</option>"
+    "<option value=\"Africa/Algiers\">Alger</option>"
+    "<option value=\"Australia/Eucla\">Eucla</option>"
+    "<option value=\"Europe/Paris\">Paris</option>"
+    "<option value=\"Europe/London\">Londres</option>"
+    "<option value=\"Asia/Tokyo\">Tokyo</option>"
+    "<option value=\"Australia/Sydney\">Sydney</option>"
+    "<option value=\"Europe/Berlin\">Berlin</option>"
+    "<option value=\"Asia/Dubai\">Dubai</option>"
+    "</select>"
+    "<select name=\"ville2e\" id=\"ville2e\" required>"
+    "<option value=\"\" disabled selected hidden>— Choisir la 2<sup>e</sup> ville —</option>"
+    "<option value=\"auto\">Emplacement actuel</option>"
+    "<option value=\"America/Montreal\">Montréal</option>"
+    "<option value=\"America/New_York\">New York</option>"
+    "<option value=\"Africa/Algiers\">Alger</option>"
+    "<option value=\"Australia/Eucla\">Eucla</option>"
+    "<option value=\"Europe/Paris\">Paris</option>"
+    "<option value=\"Europe/London\">Londres</option>"
+    "<option value=\"Asia/Tokyo\">Tokyo</option>"
+    "<option value=\"Australia/Sydney\">Sydney</option>"
+    "<option value=\"Europe/Berlin\">Berlin</option>"
+    "<option value=\"Asia/Dubai\">Dubai</option>"
+    "</select>"
+    "<p>Couleurs pour l'heure de la ville actuelle:</p>"
+    "<select name=\"couleurHeuresActuels\" id=\"couleurHeuresActuels\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>";
+
+const char *htmlAvecWifiCouleurs2 =
+    "</select>"
+    "<select name=\"couleurMinutesActuels\" id=\"couleurMinutesActuels\" >"
+    "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>";
+
+const char *htmlAvecWifiCouleurs3 =
+    "</select>"
+    "<select name=\"couleurSecondes\" id=\"couleurSecondes\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des secondes —</option>";
+
+const char *htmlAvecWifiCouleurs4 =
+    "</select>"
+    "<p>Couleur de l'heure de la 2<sup>e</sup> ville:</p>"
+    "<p><small>*La couleur des minutes sera seulement appliqué si le fuseau horaire de la 2<sup>e</sup> ville n'a pas les mêmes minutes que la ville actuelle.</small></p>"
+    "<select name=\"couleurHeures2e\" id=\"couleurHeures2e\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>";
+
+const char *htmlAvecWifiCouleurs5 =
+    "</select>"
+    "<select name=\"couleurMinutes2e\" id=\"couleurMinutes2e\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>";
+
+const char *htmlAvecWifiFin =
+    "</select>"
+    "<div class=\"ligneHeure\">"
+    "<label for=\"affichageTemperature\">Affichage de température :</label>"
+    "<input type=\"checkbox\" id=\"affichageTemperature\" name=\"affichageTemperature\"><br>"
+    "</div>"
+    "<input type=\"hidden\" name=\"affichageType\" value=\"regulier\">"
+    "<input type=\"submit\" value=\"Personnaliser\">"
+    "</form>"
+    "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
+    "<h2>Tests</h2>"
+    "<form id=\"formMode\">"
+    "<select id=\"mode\" name=\"mode\">"
+    "<option value=\"\" disabled selected>Sélectionner le mode</option>"
+    "<option value=\"2\">test de leds</option>"
+    "<option value=\"3\">arc-en-ciel</option>"
+    "<option value=\"4\">rien</option>"
+    "</select><br>"
+    "<input type=\"submit\" value=\"GO\">"
+    "</form>"
+    "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
+    "<input type=\"button\" value=\"Accueil\" onclick=\"location.href='/'\">"
+    "</div>"
+    "</body>"
+    "</html>";
+
+const char *htmlSansWifiDebut =
+    "<html>"
+    "<head>"
+    "<meta charset=\"UTF-8\">"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+
+const char *htmlSansWifiContenu =
+    "<div class=\"conteneurFormulaire\">"
+    "<h1>SparkTime - version sans wifi</h1>"
+    "<h2>Personnalisation de l'horloge</h2><br>"
+    "<form id=\"formPerso\">"
+    "<div class=\"ligneHeure\">"
+    "<label for=\"heure\">Heure actuelle:</label>"
+    "<input type=\"time\" id=\"heure\" name=\"heure\" required>"
+    "</div>"
+    "<select name=\"couleurHeures\" id=\"couleurHeures\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>";
+
+const char *htmlSansWifiCouleurs2 =
+    "</select>"
+    "<select name=\"couleurMinutes\" id=\"couleurMinutes\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>";
+
+const char *htmlSansWifiCouleurs3 =
+    "</select>"
+    "<select name=\"couleurSecondes\" id=\"couleurSecondes\" required>"
+    "<option value=\"\" disabled selected hidden>— Couleur des secondes —</option>";
+
+const char *htmlSansWifiFin =
+    "</select>"
+    "<div class=\"ligneHeure\">"
+    "<label for=\"affichageTemperature\">Affichage de température :</label>"
+    "<input type=\"checkbox\" id=\"affichageTemperature\" name=\"affichageTemperature\"><br>"
+    "</div>"
+    "<fieldset>"
+    "   <legend>Type d'affichage :</legend>"
+    "   <label for=\"affichageRegulier\">Affichage régulier</label>"
+    "   <input type=\"radio\" id=\"affichageRegulier\" name=\"affichageType\" value=\"regulier\" checked><br>"
+    "   <label for=\"affichageContinu\">Affichage continu</label>"
+    "   <input type=\"radio\" id=\"affichageContinu\" name=\"affichageType\" value=\"continu\"><br>"
+    "</fieldset>"
+    "<input type=\"submit\" value=\"Personnaliser\">"
+    "</form>"
+    "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
+    "<h2>Tests</h2>"
+    "<form id=\"formMode\">"
+    "<select id=\"mode\" name=\"mode\">"
+    "<option value=\"\" disabled selected>Sélectionner le mode</option>"
+    "<option value=\"2\">test de leds</option>"
+    "<option value=\"3\">arc-en-ciel</option>"
+    "<option value=\"4\">rien</option>"
+    "</select><br>"
+    "<input type=\"submit\" value=\"GO\">"
+    "</form>"
+    "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
+    "<input type=\"button\" value=\"Accueil\" onclick=\"location.href='/'\">"
+    "</div>"
+    "</body>"
+    "</html>";
+
+const char *htmlAccueilDebut =
+    "<html>"
+    "<head>"
+    "<meta charset=\"UTF-8\">"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+
+const char *htmlAccueilContenu =
+    "<div class=\"conteneurFormulaire\">"
+    "<h1>SparkTime - Connexion</h1>"
+    "<h2>Mode de connexion</h2>"
+    "<input type=\"button\" value=\"Connexion avec WiFi\" onclick=\"connecterWifi()\">"
+    "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
+    "<input type=\"button\" value=\"Connexion sans WiFi\" onclick=\"location.href='/pageSansWifi'\">";
+
+const char *htmlAccueilScript =
+    "<script>"
+    "function connecterWifi() {"
+    "  var xhr = new XMLHttpRequest();"
+    "  xhr.open('GET', '/connectWifi', true);"
+    "  xhr.onload = function() {"
+    "    if (xhr.status === 200) {"
+    "      setTimeout(function() { window.location.href = '/pageAvecWifi'; }, 2000);"
+    "    }"
+    "  };"
+    "  xhr.send();"
+    "}"
+    "</script>"
+    "</div>"
+    "</body>"
+    "</html>";
+
 esp_err_t pageAccueilHandler(httpd_req_t *req)
 {
-    static char pageAccueil[8192];
-    snprintf(pageAccueil, sizeof(pageAccueil),
-             "<html>"
-             "<head>"
-             "<meta charset=\"UTF-8\">"
-             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-             "%s"
-             "</head>"
-             "<body>"
-             "<div class=\"conteneurFormulaire\">"
+    static char pageAccueil[8192] = {0};
+    
+    // Réinitialiser le buffer
+    memset(pageAccueil, 0, sizeof(pageAccueil));
+    
+    // Concaténer toutes les parties
+    strcat(pageAccueil, htmlAccueilDebut);
+    strcat(pageAccueil, styleCSS);
+    strcat(pageAccueil, "</head><body>");
+    strcat(pageAccueil, htmlAccueilContenu);
+    strcat(pageAccueil, htmlAccueilScript);
 
-             "<h1>SparkTime - Connexion</h1>"
-
-             "<h2>Connexion au Wi-Fi</h2>"
-
-             //version qui permet de  replir le formulaire ssid/mdp (form non fonctionnel...)
-             /*"<form id=\"formWifi\">"
-             "<input type=\"text\" id=\"ssidConnectWifi\" name=\"ssid\" placeholder=\"Nom du réseau (SSID)\" required><br>"
-             "<input type=\"password\" id=\"mdpConnectWifi\" name=\"password\" placeholder=\"Mot de passe\" required><br>"
-             "<input type=\"submit\" value=\"Connexion avec WiFi\">"
-             "</form>"*/
-
-             //version qui NE permet PAS de replir le formulaire ssid/mdp
-             "<form id=\"formWifi\">"
-             "<input type=\"text\" id=\"ssidConnectWifi\" name=\"ssid\" placeholder=\"Nom du réseau (SSID)\" required disabled><br>"
-             "<input type=\"password\" id=\"mdpConnectWifi\" name=\"password\" placeholder=\"Mot de passe\" required disabled><br>"
-             "<input type=\"submit\" value=\"Connexion avec WiFi\" disabled>"
-             "</form>"
-
-             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
-
-             "<input type=\"button\" value=\"Connexion sans WiFi\" onclick=\"location.href='/pageSansWifi'\">"
-
-             "<script>"
-             "document.getElementById(\"formWifi\").onsubmit = function(e) {"
-             "  e.preventDefault();"
-             "  var ssidWifi = document.getElementById(\"ssidConnectWifi\").value;"
-             "  var mdpWifi = document.getElementById(\"mdpConnectWifi\").value;"
-             "  var xhr = new XMLHttpRequest();"
-             "  xhr.open(\"GET\", \"/connectWifi?ssid=\" + encodeURIComponent(ssidWifi) + \"&password=\" + encodeURIComponent(mdpWifi), true);"
-             "  xhr.send();"
-             "};"
-             "</script>"
-
-             "</div>"
-             "</body>"
-             "</html>",
-             styleCSS);
     httpd_resp_send(req, pageAccueil, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
 esp_err_t pagePersonnalisationSansWifiHandler(httpd_req_t *req)
 {
-    static char pageSansWifi[8192];
+    static char pageSansWifi[8192] = {0};
+    
+    // Réinitialiser le buffer
+    memset(pageSansWifi, 0, sizeof(pageSansWifi));
+    
+    // Concaténer toutes les parties
+    strcat(pageSansWifi, htmlSansWifiDebut);
+    strcat(pageSansWifi, styleCSS);
+    strcat(pageSansWifi, "</head><body>");
+    strcat(pageSansWifi, htmlSansWifiContenu);
+    strcat(pageSansWifi, optionsCouleur);
+    strcat(pageSansWifi, htmlSansWifiCouleurs2);
+    strcat(pageSansWifi, optionsCouleur);
+    strcat(pageSansWifi, htmlSansWifiCouleurs3);
+    strcat(pageSansWifi, optionsCouleur);
+    strcat(pageSansWifi, htmlSansWifiFin);
+    strcat(pageSansWifi, jsPageSansWifi);
 
-    snprintf(pageSansWifi, sizeof(pageSansWifi),
-             "<html>"
-             "<head>"
-             "<meta charset=\"UTF-8\">"
-             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-             "%s"
-             "</head>"
-             "<body>"
-             "<div class=\"conteneurFormulaire\">"
-
-             "<h1>SparkTime - version sans wifi</h1>"
-
-             "<h2>Personnalisation de l'horloge</h2><br>"
-             "<form id=\"formPerso\">"
-             "<div class=\"ligneHeure\">"
-             "<label for=\"heure\">Heure actuelle:</label>"
-             "<input type=\"time\" id=\"heure\" name=\"heure\" required>"
-             "</div>"
-             "<select name=\"couleurHeures\" id=\"couleurHeures\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>"
-             "%s"
-             "</select>"
-
-             "<select name=\"couleurMinutes\" id=\"couleurMinutes\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>"
-             "%s"
-             "</select>"
-
-             "<select name=\"couleurSecondes\" id=\"couleurSecondes\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des secondes —</option>"
-             "%s"
-             "</select>"
-
-             "<div class=\"ligneHeure\">"
-             "<label for=\"affichageTemperature\">Affichage de température :</label>"
-             "<input type=\"checkbox\" id=\"affichageTemperature\" name=\"affichageTemperature\"><br>"
-             "</div>"
-
-             "<fieldset>"
-             "   <legend>Type d'affichage :</legend>"
-             "   <label for=\"affichageRegulier\">Affichage régulier</label>"
-             "   <input type=\"radio\" id=\"affichageRegulier\" name=\"affichageType\" value=\"regulier\" checked><br>"
-             "   <label for=\"affichageContinu\">Affichage continu</label>"
-             "   <input type=\"radio\" id=\"affichageContinu\" name=\"affichageType\" value=\"continu\"><br>"
-             "</fieldset>"
-             "<input type=\"submit\" value=\"Personnaliser\">"
-             "</form>"
-
-             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
-
-             "<h2>Tests</h2>"
-             "<form id=\"formMode\">"
-             "<select id=\"mode\" name=\"mode\">"
-             "<option value=\"\" disabled selected>Sélectionner le mode</option>"
-             "<option value=\"2\">test de leds</option>"
-             "<option value=\"3\">arc-en-ciel</option>"
-             "<option value=\"4\">rien</option>"
-             "</select><br>"
-             "<input type=\"submit\" value=\"GO\">"
-             "</form>"
-             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
-             "<input type=\"button\" value=\"Accueil\" onclick=\"location.href='/'\">"
-
-             "%s"
-
-             "</div>"
-             "</body>"
-             "</html>",
-             styleCSS, optionsCouleur, optionsCouleur, optionsCouleur, jsPageSansWifi);
     httpd_resp_send(req, pageSansWifi, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
 esp_err_t pagePersonnalisationAvecWifiHandler(httpd_req_t *req)
 {
-    static char pageAvecWifi[8192];
+    static char pageAvecWifi[8192] = {0};
+    
+    // Réinitialiser le buffer
+    memset(pageAvecWifi, 0, sizeof(pageAvecWifi));
+    
+    // Concaténer toutes les parties
+    strcat(pageAvecWifi, htmlAvecWifiDebut);
+    strcat(pageAvecWifi, styleCSS);
+    strcat(pageAvecWifi, "</head><body>");
+    strcat(pageAvecWifi, htmlAvecWifiContenu);
+    strcat(pageAvecWifi, optionsCouleur);
+    strcat(pageAvecWifi, htmlAvecWifiCouleurs2);
+    strcat(pageAvecWifi, optionsCouleur);
+    strcat(pageAvecWifi, htmlAvecWifiCouleurs3);
+    strcat(pageAvecWifi, optionsCouleur);
+    strcat(pageAvecWifi, htmlAvecWifiCouleurs4);
+    strcat(pageAvecWifi, optionsCouleur);
+    strcat(pageAvecWifi, htmlAvecWifiCouleurs5);
+    strcat(pageAvecWifi, optionsCouleur);
+    strcat(pageAvecWifi, htmlAvecWifiFin);
+    strcat(pageAvecWifi, jsPageAvecWifi);
 
-    snprintf(pageAvecWifi, sizeof(pageAvecWifi),
-             "<html>"
-             "<head>"
-             "<meta charset=\"UTF-8\">"
-             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-             "%s"
-             "</head>"
-             "<body>"
-             "<div class=\"conteneurFormulaire\">"
-
-             "<h1>SparkTime - version avec wifi</h1>"
-
-             "<h2>Personnalisation de l'horloge</h2><br>"
-             "<form id=\"formPerso\">"
-
-             "<select name=\"villeActuelle\" id=\"villeActuelle\" required>"
-             "<option value=\"\" disabled selected hidden>— Choisir la ville actuelle —</option>"
-             "<option value=\"Montreal\">Montréal</option>"
-             "<option value=\"Paris\">Paris</option>"
-             "<option value=\"Tokyo\">Tokyo</option>"
-             "<option value=\"NewYork\">New York</option>"
-             "</select>"
-
-             "<select name=\"ville2e\" id=\"ville2e\" required>"
-             "<option value=\"\" disabled selected hidden>— Choisir la 2<sup>e</sup> ville —</option>"
-             "<option value=\"Montreal\">Montréal</option>"
-             "<option value=\"Paris\">Paris</option>"
-             "<option value=\"Tokyo\">Tokyo</option>"
-             "<option value=\"NewYork\">New York</option>"
-             "</select>"
-
-             "<p>Couleurs pour l'heure de la ville actuelle:</p>"
-
-             "<select name=\"couleurHeuresActuels\" id=\"couleurHeuresActuels\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>"
-             "%s"
-             "</select>"
-
-             "<select name=\"couleurMinutesActuels\" id=\"couleurMinutesActuels\" >"
-             "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>"
-             "%s"
-             "</select>"
-
-             "<select name=\"couleurSecondes\" id=\"couleurSecondes\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des secondes —</option>"
-             "%s"
-             "</select>"
-
-             "<p>Couleur de l'heure de la 2<sup>e</sup> ville:</p>"
-             "<p><small>*La couleur des minutes sera seulement appliqué si le fuseau horaire de la 2<sup>e</sup> ville n'a pas les mêmes minutes que la ville actuelle.</small></p>"
-
-             "<select name=\"couleurHeures2e\" id=\"couleurHeures2e\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>"
-             "%s"
-             "</select>"
-
-             "<select name=\"couleurMinutes2e\" id=\"couleurMinutes2e\" required>"
-             "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>"
-             "%s"
-             "</select>"
-
-             "<div class=\"ligneHeure\">"
-             "<label for=\"affichageTemperature\">Affichage de température :</label>"
-             "<input type=\"checkbox\" id=\"affichageTemperature\" name=\"affichageTemperature\"><br>"
-             "</div>"
-
-             "<input type=\"submit\" value=\"Personnaliser\">"
-             "</form>"
-
-             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
-
-             "<h2>Tests</h2>"
-             "<form id=\"formMode\">"
-             "<select id=\"mode\" name=\"mode\">"
-             "<option value=\"\" disabled selected>Sélectionner le mode</option>"
-             "<option value=\"2\">test de leds</option>"
-             "<option value=\"3\">arc-en-ciel</option>"
-             "<option value=\"4\">rien</option>"
-             "</select><br>"
-             "<input type=\"submit\" value=\"GO\">"
-             "</form>"
-             "<hr style=\"margin: 2em 0; width: 100%%; border: none; border-top: 2px solid #ccc;\">"
-             "<input type=\"button\" value=\"Accueil\" onclick=\"location.href='/'\">"
-
-             "%s"
-
-             "</div>"
-             "</body>"
-             "</html>",
-             styleCSS, optionsCouleur, optionsCouleur, optionsCouleur, optionsCouleur, optionsCouleur, jsPageAvecWifi);
     httpd_resp_send(req, pageAvecWifi, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }

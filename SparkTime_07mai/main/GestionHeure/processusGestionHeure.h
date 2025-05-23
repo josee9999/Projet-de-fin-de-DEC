@@ -19,6 +19,7 @@ typedef struct {
     int heures;
     int minutes;
     int secondes;
+    bool estVillePrincipale;  // true pour la ville actuelle, false pour la 2e ville
 } sTemps;
 
 void task_GestionHeure(void *pvParameter);

@@ -7,7 +7,6 @@
     Création: 25/04/2025
     Auteur: Josée Girard
 */
-
 #ifndef PROCESSUSAFFICHAGENEOPIXEL_H
 #define PROCESSUSAFFICHAGENEOPIXEL_H
 
@@ -16,7 +15,7 @@
 #include "freertos/task.h"
 #include "main.h"
 
-#define COULEUR_ETEINTE NP_RGB(0, 0, 0)
+#define COULEUR_ETEINTE (tNeopixel){0, 0, 0}
 
 typedef enum
 {
@@ -45,11 +44,11 @@ typedef struct {
     char affichageType[16];
 } sParametresHorloge;
 
-
 void setParametresHorloge(sParametresHorloge *params);
 void task_AffichageNeopixel(void *pvParameter);
 void choixCouleur(const char *couleur, int position, tNeopixel *pixel,int intensiteLumineuse);
 int determinerIntensiteNeopixelHorloge(const sParametresHorloge *parametres);
-void initialiserProcessusAffichageNeopixel();
+void initialiserProcessusAffichageNeopixel(void);
+void afficherChenille(sNeopixelContexts *npContexts, const tNeopixel *chenille, int chenilleLength, int position, int niveauIntensite);
 
 #endif

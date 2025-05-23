@@ -2,21 +2,28 @@
     "configurations": [
         {
             "name": "ESP-IDF",
-            "compilerPath": "${config:idf.toolsPathWin}\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-gcc.exe",
-            "compileCommands": "${config:idf.buildPath}/compile_commands.json",
+            "compilerPath": "${config:idf.toolsPathWin}\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp32-elf-gcc.exe",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "includePath": [
-                "${config:idf.espIdfPath}/components/**",
-                "${config:idf.espIdfPathWin}/components/**",
-                "${workspaceFolder}/**"
+                "${env:IDF_PATH}/components/**",
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/managed_components/espp__neopixel/include/**"
             ],
             "browse": {
                 "path": [
-                    "${config:idf.espIdfPath}/components",
-                    "${config:idf.espIdfPathWin}/components",
-                    "${workspaceFolder}"
+                    "${env:IDF_PATH}/components",
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/managed_components/espp__neopixel/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true
-            }
+            },
+            "defines": [
+                "CONFIG_IDF_TARGET_ESP32",
+                "ESP_PLATFORM"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "cppStandard": "c++17",
+            "cStandard": "c17"
         }
     ],
     "version": 4
