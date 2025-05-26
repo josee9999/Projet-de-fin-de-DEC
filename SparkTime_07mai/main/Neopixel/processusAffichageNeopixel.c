@@ -90,15 +90,17 @@ void task_AffichageNeopixel(void *pvParameter)
 
     eModeAffichage mode = MODE_ARCENCIEL;
     int offset = 0;
+    sTemps derniereHeure = {0};
 
     while (1)
     {
+        // Vérifier les nouveaux paramètres
         sParametresHorloge nouveauxParametres;
         if (xQueueReceive(fileParamHorloge, &nouveauxParametres, pdMS_TO_TICKS(10)) == pdPASS)
         {
+            ESP_LOGI(TAG, "Nouveaux paramètres reçus - Mode: %d", nouveauxParametres.modeActuel);
             setParametresHorloge(&nouveauxParametres);
             mode = nouveauxParametres.modeActuel;
-            // Éteindre toutes les LEDs lors d'un changement de mode
             eteindreToutesLesLEDs(npContexts);
         }
 
@@ -106,365 +108,53 @@ void task_AffichageNeopixel(void *pvParameter)
         {
             switch (mode)
             {
-            case MODE_ARRET:
-                eteindreToutesLesLEDs(npContexts);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                break;
-
-            case MODE_ARCENCIEL:
-                eteindreToutesLesLEDs(npContexts); // Éteindre avant de commencer
-                gpio_set_level(ENABLE_MIN_HRS, 0);
-                gpio_set_level(ENABLE_SEC, 0);
-
-                static int pos = 0;
-                const int nbCouleurs = NOMBRE_COULEURS - 1; // Exclure le blanc
-                const int totalLEDs = NP_SEC_COUNT + NP_MIN_HRS_COUNT;
-                
-                if (npContexts != NULL && npContexts->npCtxSec != NULL && npContexts->npCtxMinHrs != NULL)
+                case MODE_HORLOGE:
                 {
-                    // D'abord, éteindre toutes les LEDs
-                    for(int i = 0; i < NP_SEC_COUNT; i++) {
-                        mettreCouleurNeopixel(npContexts->npCtxSec, i, 0, 0, 0);
-                    }
-                    for(int i = 0; i < NP_MIN_HRS_COUNT; i++) {
-                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, i, 0, 0, 0);
-                    }
+                    sTemps heureActuelle = {0};
+                    bool heureRecue = false;
 
-                    // Allumer seulement les 12 LEDs de la chenille
-                    for(int i = 0; i < nbCouleurs; i++) {
-                        int ledPos = pos - i;
-                        if(ledPos >= 0 && ledPos < totalLEDs) {
-                            // Déterminer si on est sur la bande des secondes ou des minutes/heures
-                            if(ledPos < NP_SEC_COUNT) {
-                                // LED sur la bande des secondes
-                                mettreCouleurNeopixel(npContexts->npCtxSec, ledPos,
-                                    couleurPixel[i][NIVEAU_PALE].r,
-                                    couleurPixel[i][NIVEAU_PALE].g,
-                                    couleurPixel[i][NIVEAU_PALE].b);
-                            } else {
-                                // LED sur la bande des minutes/heures
-                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, ledPos - NP_SEC_COUNT,
-                                    couleurPixel[i][NIVEAU_PALE].r,
-                                    couleurPixel[i][NIVEAU_PALE].g,
-                                    couleurPixel[i][NIVEAU_PALE].b);
-                            }
-                        }
+                    // Vider la file et garder la dernière valeur
+                    while (xQueueReceive(fileHeure, &heureActuelle, 0) == pdPASS) {
+                        heureRecue = true;
                     }
 
-                    afficherNeopixel(npContexts->npCtxSec);
-                    afficherNeopixel(npContexts->npCtxMinHrs);
-
-                    pos++;
-                    if(pos >= totalLEDs + nbCouleurs) {
-                        pos = 0;
-                    }
-                }
-                
-                vTaskDelay(pdMS_TO_TICKS(75));
-                break;
-
-            case MODE_TEST:
-                eteindreToutesLesLEDs(npContexts); // Éteindre avant de commencer
-                gpio_set_level(ENABLE_MIN_HRS, 0);
-                gpio_set_level(ENABLE_SEC, 0);
-
-                static int ledIndex = 0;
-                static int indexCouleur = 0;
-                static bool testingSeconds = true; // Pour savoir quelle bande on teste
-                
-                if (npContexts != NULL && npContexts->npCtxSec != NULL && npContexts->npCtxMinHrs != NULL)
-                {
-                    if (testingSeconds)
+                    // Si on a reçu une nouvelle heure
+                    if (heureRecue)
                     {
-                        // Test des LEDs des secondes
-                        if (ledIndex < NP_SEC_COUNT)
-                        {
-                            if (indexCouleur < 12)
-                            {
-                                int couleur;
-                                int niveau;
-                                
-                                if (indexCouleur < 3) {
-                                    couleur = COULEUR_ROUGE;
-                                    niveau = indexCouleur;
-                                } else if (indexCouleur < 6) {
-                                    couleur = COULEUR_VERT;
-                                    niveau = indexCouleur - 3;
-                                } else if (indexCouleur < 9) {
-                                    couleur = COULEUR_INDIGO;
-                                    niveau = indexCouleur - 6;
-                                } else {
-                                    couleur = COULEUR_BLANC;
-                                    niveau = indexCouleur - 9;
-                                }
-                                
-                                mettreCouleurNeopixel(npContexts->npCtxSec, ledIndex,
-                                    couleurPixel[couleur][niveau].r,
-                                    couleurPixel[couleur][niveau].g,
-                                    couleurPixel[couleur][niveau].b);
-                                
-                               // ESP_LOGI(TAG, "LED Secondes %d: Couleur %d, Niveau %d", ledIndex, couleur, niveau);
-                                
-                                indexCouleur++;
-                            }
-                            else
-                            {
-                                indexCouleur = 0;
-                                ledIndex++;
-                            }
-                        }
-                        else
-                        {
-                            // Passage aux minutes/heures
-                            testingSeconds = false;
-                            ledIndex = 0;
-                            indexCouleur = 0;
-                            eteindreToutesLesLEDs(npContexts);
-                        }
-                        afficherNeopixel(npContexts->npCtxSec);
-                    }
-                    else
-                    {
-                        // Test des LEDs minutes/heures
-                        if (ledIndex < NP_MIN_HRS_COUNT)
-                        {
-                            if (indexCouleur < 12)
-                            {
-                                int couleur;
-                                int niveau;
-                                
-                                if (indexCouleur < 3) {
-                                    couleur = COULEUR_ROUGE;
-                                    niveau = indexCouleur;
-                                } else if (indexCouleur < 6) {
-                                    couleur = COULEUR_VERT;
-                                    niveau = indexCouleur - 3;
-                                } else if (indexCouleur < 9) {
-                                    couleur = COULEUR_INDIGO;
-                                    niveau = indexCouleur - 6;
-                                } else {
-                                    couleur = COULEUR_BLANC;
-                                    niveau = indexCouleur - 9;
-                                }
-                                
-                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, ledIndex,
-                                    couleurPixel[couleur][niveau].r,
-                                    couleurPixel[couleur][niveau].g,
-                                    couleurPixel[couleur][niveau].b);
-                                
-                               // ESP_LOGI(TAG, "LED Min/Hrs %d: Couleur %d, Niveau %d", ledIndex, couleur, niveau);
-                                
-                                indexCouleur++;
-                            }
-                            else
-                            {
-                                indexCouleur = 0;
-                                ledIndex++;
-                            }
-                        }
-                        else
-                        {
-                            // Fin du test
-                            testingSeconds = true;
-                            ledIndex = 0;
-                            indexCouleur = 0;
-                            mode = MODE_ARRET;
-                            eteindreToutesLesLEDs(npContexts);
-                        }
-                        afficherNeopixel(npContexts->npCtxMinHrs);
-                    }
-                }
-                
-                vTaskDelay(pdMS_TO_TICKS(50));
-                break;
-
-            case MODE_HORLOGE:
-                gpio_set_level(ENABLE_MIN_HRS, 0);
-                gpio_set_level(ENABLE_SEC, 0);
-
-                sTemps heureActuelle = {0};
-                
-                // Récupérer l'heure actuelle
-                BaseType_t resultat = xQueueReceive(fileHeure, &heureActuelle, pdMS_TO_TICKS(10));
-                if (resultat == pdPASS)
-                {
-                    ESP_LOGI(TAG, "Mode Horloge - Heure reçue: %02d:%02d:%02d",
-                            heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
-
-                    static sTemps dernierAffichage = {-1, -1, -1}; // Pour suivre le dernier état
-
-                    if (npContexts != NULL && npContexts->npCtxSec != NULL && npContexts->npCtxMinHrs != NULL)
-                    {
-                        tNeopixel couleurSecondes = {0};
-                        tNeopixel couleurMinutes = {0};
-                        tNeopixel couleurHeures = {0};
-
-                        // Déterminer les couleurs en fonction des paramètres web
-                        // Déterminer l'intensité en fonction du mode
-                        int intensite = determinerIntensiteNeopixelHorloge(&parametresHorloge);
-                        choixCouleur(parametresHorloge.couleurSecondesActuelles, 0, &couleurSecondes, intensite);
-                        choixCouleur(parametresHorloge.couleurMinutesActuelles, 0, &couleurMinutes, intensite);
-                        choixCouleur(parametresHorloge.couleurHeuresActuelles, 0, &couleurHeures, intensite);
-
-                        // Position des secondes (décalage de 45 pour aligner 0 sur la position 45)
-                        int secondePos = (heureActuelle.secondes + 45) % 60;
-                        ESP_LOGI(TAG, "Position LED seconde: %d (seconde: %d)", secondePos, heureActuelle.secondes);
+                        ESP_LOGI(TAG, "Mode Horloge - Nouvelle heure: %02d:%02d:%02d",
+                                heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
                         
-                        // Position des minutes
-                        int minutePos = (heureActuelle.minutes + 45) % 60;
-                        ESP_LOGI(TAG, "Position LED minute: %d (minute: %d)", minutePos, heureActuelle.minutes);
+                        derniereHeure = heureActuelle;
                         
-                        // Position des heures (conversion en format 12h)
-                        int heures12 = heureActuelle.heures % 12;
-                        if (heures12 == 0) heures12 = 12;  // Convertir 0h en 12h
-                        
-                        // Calcul de la position précise des heures en tenant compte des minutes
-                        float progression = heureActuelle.minutes / 60.0f;
-                        if (heures12 == 0) heures12 = 12;
-                        
-                        // Calcul de la position exacte avec interpolation
-                        float positionExacte;
-                        if (heures12 == 12) {
-                            positionExacte = 105;  // Midi/Minuit reste fixe à 105
-                        } else {
-                            // Calcul de la position de base pour l'heure
-                            // 1h -> 110, 2h -> 115, 3h -> 60, 4h -> 65, etc.
-                            float posBase;
-                            if (heures12 <= 2) {
-                                // Pour 1h et 2h, on part de 110
-                                posBase = 110 + ((heures12 - 1) * 5);
-                            } else {
-                                // Pour 3h à 11h, on commence à 60
-                                posBase = 60 + ((heures12 - 3) * 5);
-                            }
-                            
-                            // Ajout de la progression des minutes
-                            positionExacte = posBase + (progression * 5);
-                            
-                            // Gestion du débordement
-                            if (positionExacte >= 120) {
-                                positionExacte = 60 + (positionExacte - 120);
-                            }
-                        }
-                        
-                        // Affichage selon le type d'affichage choisi
-                        if (strcmp(parametresHorloge.affichageType, "regulier") == 0)
-                        {
-                            // En mode régulier, éteindre les anciennes LEDs si nécessaire
-                            if (dernierAffichage.secondes >= 0) {
-                                int anciennePosSec = (dernierAffichage.secondes + 45) % 60;
-                                mettreCouleurNeopixel(npContexts->npCtxSec, anciennePosSec, 0, 0, 0);
-                            }
-                            if (dernierAffichage.minutes != heureActuelle.minutes && dernierAffichage.minutes >= 0) {
-                                int anciennePosMin = (dernierAffichage.minutes + 45) % 60;
-                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, anciennePosMin, 0, 0, 0);
-                            }
-                            if (dernierAffichage.heures != heureActuelle.heures && dernierAffichage.heures >= 0) {
-                                int anciennesHeures12 = dernierAffichage.heures % 12;
-                                if (anciennesHeures12 == 0) anciennesHeures12 = 12;
-                                int anciennePosHeure = 60 + ((anciennesHeures12 * 5 + 45) % 60);
-                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, anciennePosHeure, 0, 0, 0);
-                            }
+                        static sTemps dernierAffichage = {-1, -1, -1}; // Pour suivre le dernier état
 
-                            // Afficher les nouvelles positions
-                            mettreCouleurNeopixel(npContexts->npCtxSec, secondePos,
-                                couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
-                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, minutePos,
-                                couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
-                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, positionExacte,
-                                couleurHeures.r, couleurHeures.g, couleurHeures.b);
-                        }
-                        else if (strcmp(parametresHorloge.affichageType, "continu") == 0)
+                        if (npContexts != NULL && npContexts->npCtxSec != NULL && npContexts->npCtxMinHrs != NULL)
                         {
-                            static bool premierAffichage = true;
-                            static int derniereSeconde = -1;
-                            static int derniereMinute = -1;
-                            static int derniereHeure = -1;
-                            static float dernierePosHeure = -1;
-                            bool needUpdate = false;
-                            
-                            // Au premier affichage ou lors d'un changement de mode
-                            if (premierAffichage) {
-                                eteindreToutesLesLEDs(npContexts);
-                                derniereSeconde = -1;
-                                derniereMinute = -1;
-                                derniereHeure = -1;
-                                dernierePosHeure = -1;
-                                premierAffichage = false;
-                                needUpdate = true;
-                            }
+                            tNeopixel couleurSecondes = {0};
+                            tNeopixel couleurMinutes = {0};
+                            tNeopixel couleurHeures = {0};
 
-                            // Gestion des secondes
-                            if (heureActuelle.secondes == 0 && derniereSeconde != 0) {
-                                // Réinitialisation complète des LEDs des secondes
-                                for (int i = 0; i < NP_SEC_COUNT; i++) {
-                                    mettreCouleurNeopixel(npContexts->npCtxSec, i, 0, 0, 0);
-                                }
-                                needUpdate = true;
-                            }
+                            // Déterminer les couleurs en fonction des paramètres web
+                            // Déterminer l'intensité en fonction du mode
+                            int intensite = determinerIntensiteNeopixelHorloge(&parametresHorloge);
+                            choixCouleur(parametresHorloge.couleurSecondesActuelles, 0, &couleurSecondes, intensite);
+                            choixCouleur(parametresHorloge.couleurMinutesActuelles, 0, &couleurMinutes, intensite);
+                            choixCouleur(parametresHorloge.couleurHeuresActuelles, 0, &couleurHeures, intensite);
+
+                            // Position des secondes (décalage de 45 pour aligner 0 sur la position 45)
+                            int secondePos = (heureActuelle.secondes + 45) % 60;
+                            ESP_LOGI(TAG, "Position LED seconde: %d (seconde: %d)", secondePos, heureActuelle.secondes);
                             
-                            // Affichage des secondes
-                            if (heureActuelle.secondes != derniereSeconde) {
-                                int startPos = 45;
-                                int endPos = secondePos;
-                                
-                                if (endPos < startPos) {
-                                    // Si on a dépassé la position 45, on allume jusqu'à 60 puis de 0 à la position actuelle
-                                    for (int i = startPos; i < 60; i++) {
-                                        mettreCouleurNeopixel(npContexts->npCtxSec, i,
-                                            couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
-                                    }
-                                    for (int i = 0; i <= endPos; i++) {
-                                        mettreCouleurNeopixel(npContexts->npCtxSec, i,
-                                            couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
-                                    }
-                                } else {
-                                    // Sinon on allume simplement de 45 à la position actuelle
-                                    for (int i = startPos; i <= endPos; i++) {
-                                        mettreCouleurNeopixel(npContexts->npCtxSec, i,
-                                            couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
-                                    }
-                                }
-                                needUpdate = true;
-                            }
+                            // Position des minutes
+                            int minutePos = (heureActuelle.minutes + 45) % 60;
+                            ESP_LOGI(TAG, "Position LED minute: %d (minute: %d)", minutePos, heureActuelle.minutes);
                             
-                            // Gestion des minutes
-                            if (heureActuelle.minutes == 0 && derniereMinute != 0) {
-                                // Réinitialisation complète des LEDs des minutes
-                                for (int i = 0; i < 60; i++) {
-                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, i, 0, 0, 0);
-                                }
-                                needUpdate = true;
-                            }
-                            
-                            // Affichage des minutes
-                            if (heureActuelle.minutes != derniereMinute) {
-                                int startPos = 45;
-                                int endPos = minutePos;
-                                
-                                if (endPos < startPos) {
-                                    // Si on a dépassé la position 45, on allume jusqu'à 60 puis de 0 à la position actuelle
-                                    for (int i = startPos; i < 60; i++) {
-                                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
-                                            couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
-                                    }
-                                    for (int i = 0; i <= endPos; i++) {
-                                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
-                                            couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
-                                    }
-                                } else {
-                                    // Sinon on allume simplement de 45 à la position actuelle
-                                    for (int i = startPos; i <= endPos; i++) {
-                                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
-                                            couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
-                                    }
-                                }
-                                needUpdate = true;
-                            }
+                            // Position des heures (conversion en format 12h)
+                            int heures12 = heureActuelle.heures % 12;
+                            if (heures12 == 0) heures12 = 12;  // Convertir 0h en 12h
                             
                             // Calcul de la position précise des heures en tenant compte des minutes
                             float progression = heureActuelle.minutes / 60.0f;
-                            int heures12 = heureActuelle.heures % 12;
                             if (heures12 == 0) heures12 = 12;
                             
                             // Calcul de la position exacte avec interpolation
@@ -492,90 +182,403 @@ void task_AffichageNeopixel(void *pvParameter)
                                 }
                             }
                             
-                            // Mise à jour de l'affichage des heures si la position a changé
-                            if (positionExacte != dernierePosHeure || heureActuelle.heures != derniereHeure) {
-                                // Réinitialisation des LEDs des heures
-                                for (int i = 60; i < NP_MIN_HRS_COUNT; i++) {
-                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, i, 0, 0, 0);
+                            // Affichage selon le type d'affichage choisi
+                            if (strcmp(parametresHorloge.affichageType, "regulier") == 0)
+                            {
+                                // En mode régulier, éteindre les anciennes LEDs si nécessaire
+                                if (dernierAffichage.secondes >= 0) {
+                                    int anciennePosSec = (dernierAffichage.secondes + 45) % 60;
+                                    mettreCouleurNeopixel(npContexts->npCtxSec, anciennePosSec, 0, 0, 0);
+                                }
+                                if (dernierAffichage.minutes != heureActuelle.minutes && dernierAffichage.minutes >= 0) {
+                                    int anciennePosMin = (dernierAffichage.minutes + 45) % 60;
+                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, anciennePosMin, 0, 0, 0);
+                                }
+                                if (dernierAffichage.heures != heureActuelle.heures && dernierAffichage.heures >= 0) {
+                                    int anciennesHeures12 = dernierAffichage.heures % 12;
+                                    if (anciennesHeures12 == 0) anciennesHeures12 = 12;
+                                    int anciennePosHeure = 60 + ((anciennesHeures12 * 5 + 45) % 60);
+                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, anciennePosHeure, 0, 0, 0);
+                                }
+
+                                // Afficher les nouvelles positions
+                                mettreCouleurNeopixel(npContexts->npCtxSec, secondePos,
+                                    couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
+                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, minutePos,
+                                    couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, positionExacte,
+                                    couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                            }
+                            else if (strcmp(parametresHorloge.affichageType, "continu") == 0)
+                            {
+                                static bool premierAffichage = true;
+                                static int derniereSeconde = -1;
+                                static int derniereMinute = -1;
+                                static int derniereHeure = -1;
+                                static float dernierePosHeure = -1;
+                                bool needUpdate = false;
+                                
+                                // Au premier affichage ou lors d'un changement de mode
+                                if (premierAffichage) {
+                                    eteindreToutesLesLEDs(npContexts);
+                                    derniereSeconde = -1;
+                                    derniereMinute = -1;
+                                    derniereHeure = -1;
+                                    dernierePosHeure = -1;
+                                    premierAffichage = false;
+                                    needUpdate = true;
+                                }
+
+                                // Gestion des secondes
+                                if (heureActuelle.secondes == 0 && derniereSeconde != 0) {
+                                    // Réinitialisation complète des LEDs des secondes
+                                    for (int i = 0; i < NP_SEC_COUNT; i++) {
+                                        mettreCouleurNeopixel(npContexts->npCtxSec, i, 0, 0, 0);
+                                    }
+                                    needUpdate = true;
                                 }
                                 
-                                if (heures12 == 12) {
-                                    // Cas spécial pour midi/minuit : seulement la LED 105
-                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, 105,
-                                        couleurHeures.r, couleurHeures.g, couleurHeures.b);
-                                } else {
-                                    // Pour les autres heures
-                                    int startPos = 105;  // Position de départ (12h)
-                                    int endPos = (int)positionExacte;
+                                // Affichage des secondes
+                                if (heureActuelle.secondes != derniereSeconde) {
+                                    int startPos = 45;
+                                    int endPos = secondePos;
                                     
                                     if (endPos < startPos) {
-                                        // Si on est entre 1h et 11h
-                                        // D'abord de 105 jusqu'à la fin
-                                        for (int i = startPos; i < NP_MIN_HRS_COUNT; i++) {
-                                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
-                                                couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                        // Si on a dépassé la position 45, on allume jusqu'à 60 puis de 0 à la position actuelle
+                                        for (int i = startPos; i < 60; i++) {
+                                            mettreCouleurNeopixel(npContexts->npCtxSec, i,
+                                                couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
                                         }
-                                        // Puis de 60 jusqu'à la position actuelle
-                                        for (int i = 60; i <= endPos; i++) {
-                                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
-                                                couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                        for (int i = 0; i <= endPos; i++) {
+                                            mettreCouleurNeopixel(npContexts->npCtxSec, i,
+                                                couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
                                         }
-                                    } else if (endPos > startPos) {
-                                        // Si on est entre 13h et 23h
+                                    } else {
+                                        // Sinon on allume simplement de 45 à la position actuelle
                                         for (int i = startPos; i <= endPos; i++) {
-                                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
-                                                couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                            mettreCouleurNeopixel(npContexts->npCtxSec, i,
+                                                couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
                                         }
                                     }
+                                    needUpdate = true;
                                 }
-                                needUpdate = true;
-                                dernierePosHeure = positionExacte;
+                                
+                                // Gestion des minutes
+                                if (heureActuelle.minutes == 0 && derniereMinute != 0) {
+                                    // Réinitialisation complète des LEDs des minutes
+                                    for (int i = 0; i < 60; i++) {
+                                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, i, 0, 0, 0);
+                                    }
+                                    needUpdate = true;
+                                }
+                                
+                                // Affichage des minutes
+                                if (heureActuelle.minutes != derniereMinute) {
+                                    int startPos = 45;
+                                    int endPos = minutePos;
+                                    
+                                    if (endPos < startPos) {
+                                        // Si on a dépassé la position 45, on allume jusqu'à 60 puis de 0 à la position actuelle
+                                        for (int i = startPos; i < 60; i++) {
+                                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                                couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+                                        }
+                                        for (int i = 0; i <= endPos; i++) {
+                                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                                couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+                                        }
+                                    } else {
+                                        // Sinon on allume simplement de 45 à la position actuelle
+                                        for (int i = startPos; i <= endPos; i++) {
+                                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                                couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+                                        }
+                                    }
+                                    needUpdate = true;
+                                }
+                                
+                                // Calcul de la position précise des heures en tenant compte des minutes
+                                float progression = heureActuelle.minutes / 60.0f;
+                                int heures12 = heureActuelle.heures % 12;
+                                if (heures12 == 0) heures12 = 12;
+                                
+                                // Calcul de la position exacte avec interpolation
+                                float positionExacte;
+                                if (heures12 == 12) {
+                                    positionExacte = 105;  // Midi/Minuit reste fixe à 105
+                                } else {
+                                    // Calcul de la position de base pour l'heure
+                                    // 1h -> 110, 2h -> 115, 3h -> 60, 4h -> 65, etc.
+                                    float posBase;
+                                    if (heures12 <= 2) {
+                                        // Pour 1h et 2h, on part de 110
+                                        posBase = 110 + ((heures12 - 1) * 5);
+                                    } else {
+                                        // Pour 3h à 11h, on commence à 60
+                                        posBase = 60 + ((heures12 - 3) * 5);
+                                    }
+                                    
+                                    // Ajout de la progression des minutes
+                                    positionExacte = posBase + (progression * 5);
+                                    
+                                    // Gestion du débordement
+                                    if (positionExacte >= 120) {
+                                        positionExacte = 60 + (positionExacte - 120);
+                                    }
+                                }
+                                
+                                // Mise à jour de l'affichage des heures si la position a changé
+                                if (positionExacte != dernierePosHeure || heureActuelle.heures != derniereHeure) {
+                                    // Réinitialisation des LEDs des heures
+                                    for (int i = 60; i < NP_MIN_HRS_COUNT; i++) {
+                                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, i, 0, 0, 0);
+                                    }
+                                    
+                                    if (heures12 == 12) {
+                                        // Cas spécial pour midi/minuit : seulement la LED 105
+                                        mettreCouleurNeopixel(npContexts->npCtxMinHrs, 105,
+                                            couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                    } else {
+                                        // Pour les autres heures
+                                        int startPos = 105;  // Position de départ (12h)
+                                        int endPos = (int)positionExacte;
+                                        
+                                        if (endPos < startPos) {
+                                            // Si on est entre 1h et 11h
+                                            // D'abord de 105 jusqu'à la fin
+                                            for (int i = startPos; i < NP_MIN_HRS_COUNT; i++) {
+                                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                                    couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                            }
+                                            // Puis de 60 jusqu'à la position actuelle
+                                            for (int i = 60; i <= endPos; i++) {
+                                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                                    couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                            }
+                                        } else if (endPos > startPos) {
+                                            // Si on est entre 13h et 23h
+                                            for (int i = startPos; i <= endPos; i++) {
+                                                mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                                    couleurHeures.r, couleurHeures.g, couleurHeures.b);
+                                            }
+                                        }
+                                    }
+                                    needUpdate = true;
+                                    dernierePosHeure = positionExacte;
+                                }
+
+                                // Mise à jour des dernières valeurs
+                                derniereSeconde = heureActuelle.secondes;
+                                derniereMinute = heureActuelle.minutes;
+                                derniereHeure = heureActuelle.heures;
+
+                                // Si on change d'heure, réinitialiser premierAffichage
+                                if (dernierAffichage.heures != heureActuelle.heures) {
+                                    premierAffichage = true;
+                                }
+
+                                // Afficher les changements seulement si nécessaire
+                                if (needUpdate) {
+                                    // S'assurer que toutes les couleurs sont bien configurées avant l'affichage
+                                    vTaskDelay(pdMS_TO_TICKS(2));
+                                    afficherNeopixel(npContexts->npCtxSec);
+                                    vTaskDelay(pdMS_TO_TICKS(2));
+                                    afficherNeopixel(npContexts->npCtxMinHrs);
+                                }
                             }
 
-                            // Mise à jour des dernières valeurs
-                            derniereSeconde = heureActuelle.secondes;
-                            derniereMinute = heureActuelle.minutes;
-                            derniereHeure = heureActuelle.heures;
+                            // Sauvegarder l'état actuel
+                            dernierAffichage = heureActuelle;
 
-                            // Si on change d'heure, réinitialiser premierAffichage
-                            if (dernierAffichage.heures != heureActuelle.heures) {
-                                premierAffichage = true;
-                            }
+                            // Afficher les changements
+                            ESP_LOGI(TAG, "Affichage des LEDs... Type: %s", parametresHorloge.affichageType);
+                            afficherNeopixel(npContexts->npCtxSec);
+                            afficherNeopixel(npContexts->npCtxMinHrs);
+                        }
+                    }
+                    break;
+                }
+                case MODE_ARRET:
+                    eteindreToutesLesLEDs(npContexts);
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    break;
 
-                            // Afficher les changements seulement si nécessaire
-                            if (needUpdate) {
-                                // S'assurer que toutes les couleurs sont bien configurées avant l'affichage
-                                vTaskDelay(pdMS_TO_TICKS(2));
-                                afficherNeopixel(npContexts->npCtxSec);
-                                vTaskDelay(pdMS_TO_TICKS(2));
-                                afficherNeopixel(npContexts->npCtxMinHrs);
+                case MODE_ARCENCIEL:
+                    eteindreToutesLesLEDs(npContexts); // Éteindre avant de commencer
+                    gpio_set_level(ENABLE_MIN_HRS, 0);
+                    gpio_set_level(ENABLE_SEC, 0);
+
+                    static int pos = 0;
+                    const int nbCouleurs = NOMBRE_COULEURS - 1; // Exclure le blanc
+                    const int totalLEDs = NP_SEC_COUNT + NP_MIN_HRS_COUNT;
+                    
+                    if (npContexts != NULL && npContexts->npCtxSec != NULL && npContexts->npCtxMinHrs != NULL)
+                    {
+                        // D'abord, éteindre toutes les LEDs
+                        for(int i = 0; i < NP_SEC_COUNT; i++) {
+                            mettreCouleurNeopixel(npContexts->npCtxSec, i, 0, 0, 0);
+                        }
+                        for(int i = 0; i < NP_MIN_HRS_COUNT; i++) {
+                            mettreCouleurNeopixel(npContexts->npCtxMinHrs, i, 0, 0, 0);
+                        }
+
+                        // Allumer seulement les 12 LEDs de la chenille
+                        for(int i = 0; i < nbCouleurs; i++) {
+                            int ledPos = pos - i;
+                            if(ledPos >= 0 && ledPos < totalLEDs) {
+                                // Déterminer si on est sur la bande des secondes ou des minutes/heures
+                                if(ledPos < NP_SEC_COUNT) {
+                                    // LED sur la bande des secondes
+                                    mettreCouleurNeopixel(npContexts->npCtxSec, ledPos,
+                                        couleurPixel[i][NIVEAU_PALE].r,
+                                        couleurPixel[i][NIVEAU_PALE].g,
+                                        couleurPixel[i][NIVEAU_PALE].b);
+                                } else {
+                                    // LED sur la bande des minutes/heures
+                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, ledPos - NP_SEC_COUNT,
+                                        couleurPixel[i][NIVEAU_PALE].r,
+                                        couleurPixel[i][NIVEAU_PALE].g,
+                                        couleurPixel[i][NIVEAU_PALE].b);
+                                }
                             }
                         }
 
-                        // Sauvegarder l'état actuel
-                        dernierAffichage = heureActuelle;
-
-                        // Afficher les changements
-                        ESP_LOGI(TAG, "Affichage des LEDs... Type: %s", parametresHorloge.affichageType);
                         afficherNeopixel(npContexts->npCtxSec);
                         afficherNeopixel(npContexts->npCtxMinHrs);
-                    }
-                }
-                else
-                {
-                    //ESP_LOGW(TAG, "Aucune heure reçue dans la file");
-                }
-                
-                vTaskDelay(pdMS_TO_TICKS(10)); // Réduit le délai pour une mise à jour plus fréquente
-                break;
 
-            case MODE_TEMPERATURE:
-                // À implémenter si besoin
-                break;
+                        pos++;
+                        if(pos >= totalLEDs + nbCouleurs) {
+                            pos = 0;
+                        }
+                    }
+                    
+                    vTaskDelay(pdMS_TO_TICKS(75));
+                    break;
+
+                case MODE_TEST:
+                    eteindreToutesLesLEDs(npContexts); // Éteindre avant de commencer
+                    gpio_set_level(ENABLE_MIN_HRS, 0);
+                    gpio_set_level(ENABLE_SEC, 0);
+
+                    static int ledIndex = 0;
+                    static int indexCouleur = 0;
+                    static bool testingSeconds = true; // Pour savoir quelle bande on teste
+                    
+                    if (npContexts != NULL && npContexts->npCtxSec != NULL && npContexts->npCtxMinHrs != NULL)
+                    {
+                        if (testingSeconds)
+                        {
+                            // Test des LEDs des secondes
+                            if (ledIndex < NP_SEC_COUNT)
+                            {
+                                if (indexCouleur < 12)
+                                {
+                                    int couleur;
+                                    int niveau;
+                                    
+                                    if (indexCouleur < 3) {
+                                        couleur = COULEUR_ROUGE;
+                                        niveau = indexCouleur;
+                                    } else if (indexCouleur < 6) {
+                                        couleur = COULEUR_VERT;
+                                        niveau = indexCouleur - 3;
+                                    } else if (indexCouleur < 9) {
+                                        couleur = COULEUR_INDIGO;
+                                        niveau = indexCouleur - 6;
+                                    } else {
+                                        couleur = COULEUR_BLANC;
+                                        niveau = indexCouleur - 9;
+                                    }
+                                    
+                                    mettreCouleurNeopixel(npContexts->npCtxSec, ledIndex,
+                                        couleurPixel[couleur][niveau].r,
+                                        couleurPixel[couleur][niveau].g,
+                                        couleurPixel[couleur][niveau].b);
+                                    
+                                   // ESP_LOGI(TAG, "LED Secondes %d: Couleur %d, Niveau %d", ledIndex, couleur, niveau);
+                                    
+                                    indexCouleur++;
+                                }
+                                else
+                                {
+                                    indexCouleur = 0;
+                                    ledIndex++;
+                                }
+                            }
+                            else
+                            {
+                                // Passage aux minutes/heures
+                                testingSeconds = false;
+                                ledIndex = 0;
+                                indexCouleur = 0;
+                                eteindreToutesLesLEDs(npContexts);
+                            }
+                            afficherNeopixel(npContexts->npCtxSec);
+                        }
+                        else
+                        {
+                            // Test des LEDs minutes/heures
+                            if (ledIndex < NP_MIN_HRS_COUNT)
+                            {
+                                if (indexCouleur < 12)
+                                {
+                                    int couleur;
+                                    int niveau;
+                                    
+                                    if (indexCouleur < 3) {
+                                        couleur = COULEUR_ROUGE;
+                                        niveau = indexCouleur;
+                                    } else if (indexCouleur < 6) {
+                                        couleur = COULEUR_VERT;
+                                        niveau = indexCouleur - 3;
+                                    } else if (indexCouleur < 9) {
+                                        couleur = COULEUR_INDIGO;
+                                        niveau = indexCouleur - 6;
+                                    } else {
+                                        couleur = COULEUR_BLANC;
+                                        niveau = indexCouleur - 9;
+                                    }
+                                    
+                                    mettreCouleurNeopixel(npContexts->npCtxMinHrs, ledIndex,
+                                        couleurPixel[couleur][niveau].r,
+                                        couleurPixel[couleur][niveau].g,
+                                        couleurPixel[couleur][niveau].b);
+                                    
+                                   // ESP_LOGI(TAG, "LED Min/Hrs %d: Couleur %d, Niveau %d", ledIndex, couleur, niveau);
+                                    
+                                    indexCouleur++;
+                                }
+                                else
+                                {
+                                    indexCouleur = 0;
+                                    ledIndex++;
+                                }
+                            }
+                            else
+                            {
+                                // Fin du test
+                                testingSeconds = true;
+                                ledIndex = 0;
+                                indexCouleur = 0;
+                                mode = MODE_ARRET;
+                                eteindreToutesLesLEDs(npContexts);
+                            }
+                            afficherNeopixel(npContexts->npCtxMinHrs);
+                        }
+                    }
+                    
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                    break;
+
+                case MODE_TEMPERATURE:
+                    // À implémenter si besoin
+                    break;
             }
             xSemaphoreGive(npMutex);
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+
+        // Délai raisonnable entre les mises à jour
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 

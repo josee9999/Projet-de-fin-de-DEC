@@ -46,11 +46,19 @@ static void timer_callback(void* arg)
         // Vider la file
     }
 
+    // S'assurer que l'heure est marquée comme ville principale
+    heureActuelle.estVillePrincipale = true;
+
     // Envoyer la nouvelle heure
-    if (xQueueSend(fileHeure, &heureActuelle, 0) == pdPASS)
+    BaseType_t resultat = xQueueSend(fileHeure, &heureActuelle, 0);
+    if (resultat == pdPASS)
     {
-        ESP_LOGI(TAG, "Heure actuelle: %02d:%02d:%02d",
+        ESP_LOGI(TAG, "Timer: Heure actuelle: %02d:%02d:%02d",
                  heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Timer: Erreur d'envoi de l'heure dans la file (erreur: %d)", resultat);
     }
 }
 
@@ -63,61 +71,51 @@ void task_GestionHeure(void *pvParameters)
         .arg = fileHeure,
         .name = "horloge"
     };
-    sTemps temp;
 
-    // Créer le timer une seule fois
+    // Initialiser l'heure par défaut
+    heureActuelle.heures = 0;
+    heureActuelle.minutes = 0;
+    heureActuelle.secondes = 0;
+    heureActuelle.estVillePrincipale = true;
+
+    // Créer le timer
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
     
     // Attendre un peu pour s'assurer que le système est bien initialisé
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // Attendre de recevoir l'heure initiale du site web
-    ESP_LOGI(TAG, "En attente de l'heure initiale du site web...");
-    bool heureInitialisee = false;
-    
-    while (!heureInitialisee) {
-        if (xQueueReceive(fileHeure, &temp, pdMS_TO_TICKS(100)) == pdPASS) {
-            if (temp.estVillePrincipale) {
-                heureActuelle = temp;
-                heureInitialisee = true;
-                ESP_LOGI(TAG, "Heure initiale reçue du site web: %02d:%02d:%02d",
-                         heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
-            } else {
-                // Si ce n'est pas la ville principale, la remettre dans la file
-                if (xQueueSend(fileHeure, &temp, 0) != pdPASS) {
-                    ESP_LOGW(TAG, "Impossible de remettre l'heure de la ville secondaire dans la file");
-                }
-            }
-        }
-    }
-
-    // Démarrer le timer une fois l'heure initialisée
+    // Démarrer le timer immédiatement
+    ESP_LOGI(TAG, "Démarrage du timer pour l'horloge");
     ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 1000000)); // 1 seconde
+
+    // Envoyer l'heure initiale dans la file
+    if (xQueueSend(fileHeure, &heureActuelle, 0) == pdPASS) {
+        ESP_LOGI(TAG, "Heure initiale envoyée: %02d:%02d:%02d",
+                 heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
+    }
 
     while (1)
     {
         // Vérifier s'il y a une mise à jour de l'heure dans la queue
         sTemps nouvelleHeure;
-        if (xQueueReceive(fileHeure, &nouvelleHeure, 0) == pdPASS)
+        if (xQueueReceive(fileHeure, &nouvelleHeure, pdMS_TO_TICKS(10)) == pdPASS)
         {
-            if (nouvelleHeure.estVillePrincipale) {
-                // Vérifier si c'est une heure différente
-                if (nouvelleHeure.heures != heureActuelle.heures ||
-                    nouvelleHeure.minutes != heureActuelle.minutes ||
-                    nouvelleHeure.secondes != heureActuelle.secondes)
-                {
-                    ESP_LOGI(TAG, "Nouvelle heure reçue du site web: %02d:%02d:%02d",
-                             nouvelleHeure.heures, nouvelleHeure.minutes, nouvelleHeure.secondes);
-
-                    // Mettre à jour l'heure actuelle
-                    heureActuelle = nouvelleHeure;
-                }
-            }
-            
-            // Toujours renvoyer l'heure dans la file (qu'elle soit principale ou secondaire)
-            if (xQueueSend(fileHeure, &nouvelleHeure, 0) != pdPASS)
+            // Mettre à jour l'heure actuelle si elle vient du web
+            if (!nouvelleHeure.estVillePrincipale)
             {
-                ESP_LOGW(TAG, "Impossible de remettre l'heure dans la file");
+                ESP_LOGI(TAG, "Nouvelle heure reçue du web: %02d:%02d:%02d",
+                         nouvelleHeure.heures, nouvelleHeure.minutes, nouvelleHeure.secondes);
+
+                // Mettre à jour l'heure actuelle
+                heureActuelle.heures = nouvelleHeure.heures;
+                heureActuelle.minutes = nouvelleHeure.minutes;
+                heureActuelle.secondes = nouvelleHeure.secondes;
+                heureActuelle.estVillePrincipale = true;
+
+                // Renvoyer immédiatement la nouvelle heure dans la file
+                if (xQueueSend(fileHeure, &heureActuelle, 0) != pdPASS) {
+                    ESP_LOGW(TAG, "Impossible de renvoyer l'heure mise à jour");
+                }
             }
         }
 
