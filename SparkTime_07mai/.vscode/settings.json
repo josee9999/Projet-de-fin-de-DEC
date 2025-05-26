@@ -13,7 +13,8 @@
     "files.associations": {
         "*.c": "c",
         "*.cpp": "cpp",
-        "*.h": "cpp"  // si tu mélanges C++ et C, sinon "c" si tout est C
+        "*.h": "cpp",
+        "chrono": "c"
     },
 
     "C_Cpp.intelliSenseEngine": "default",

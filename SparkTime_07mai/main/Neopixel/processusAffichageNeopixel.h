@@ -11,25 +11,27 @@
 #define PROCESSUSAFFICHAGENEOPIXEL_H
 
 #include "interfaceGestionNeopixel.h"
+#include "GestionHeure/processusGestionHeure.h"
+#include "main.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "main.h"
 
 #define COULEUR_ETEINTE (tNeopixel){0, 0, 0}
 
-typedef enum
+/*typedef enum
 {
     MODE_HORLOGE,
     MODE_TEMPERATURE,
     MODE_TEST,
     MODE_ARCENCIEL,
     MODE_ARRET
-} eModeAffichage;
+} eModeAffichage;*/
 
-//extern eModeAffichage modeActuel;
 extern QueueHandle_t fileParamHorloge;
 
-typedef struct {
+/*typedef struct
+{
     eModeAffichage modeActuel;
     int nbVille;
     char heure[16];
@@ -42,13 +44,19 @@ typedef struct {
     char couleurMinutes2e[16];
     char affichageTemperature[8];
     char affichageType[16];
-} sParametresHorloge;
+} sParametresHorloge;*/
 
 void setParametresHorloge(sParametresHorloge *params);
 void task_AffichageNeopixel(void *pvParameter);
-void choixCouleur(const char *couleur, int position, tNeopixel *pixel,int intensiteLumineuse);
+void choixCouleur(const char *couleur, int position, tNeopixel *pixel, int intensiteLumineuse);
 int determinerIntensiteNeopixelHorloge(const sParametresHorloge *parametres);
 void initialiserProcessusAffichageNeopixel(void);
-void afficherChenille(sNeopixelContexts *npContexts, const tNeopixel *chenille, int chenilleLength, int position, int niveauIntensite);
+
+void gererModeArcenciel(sNeopixelContexts *npContexts);
+void gererModeTest(sNeopixelContexts *npContexts, eModeAffichage *mode);
+
+void affichageHorlogeRegulier(sNeopixelContexts *npContexts, sTemps heureActuelle, sTemps *dernierAffichage, int secondePos, int minutePos, float positionExacte, tNeopixel couleurSecondes, tNeopixel couleurMinutes, tNeopixel couleurHeures);
+void affichageHorlogeContinu(sNeopixelContexts *npContexts, sTemps heureActuelle, sTemps *dernierAffichage, int secondePos, int minutePos, tNeopixel couleurSecondes, tNeopixel couleurMinutes, tNeopixel couleurHeures);
+
 
 #endif

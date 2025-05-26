@@ -98,24 +98,29 @@ void task_GestionHeure(void *pvParameters)
     {
         // Vérifier s'il y a une mise à jour de l'heure dans la queue
         sTemps nouvelleHeure;
-        if (xQueueReceive(fileHeure, &nouvelleHeure, pdMS_TO_TICKS(10)) == pdPASS)
+        if (xQueueReceive(fileHeure, &nouvelleHeure, 0) == pdPASS)
         {
-            // Mettre à jour l'heure actuelle si elle vient du web
-            if (!nouvelleHeure.estVillePrincipale)
+            // Si c'est une heure de l'interface web, la traiter comme ville principale
+            if (!nouvelleHeure.estVillePrincipale) {
+                nouvelleHeure.estVillePrincipale = true;
+            }
+
+            // Vérifier si c'est une heure différente
+            if (nouvelleHeure.heures != heureActuelle.heures ||
+                nouvelleHeure.minutes != heureActuelle.minutes ||
+                nouvelleHeure.secondes != heureActuelle.secondes)
             {
-                ESP_LOGI(TAG, "Nouvelle heure reçue du web: %02d:%02d:%02d",
+                ESP_LOGI(TAG, "Nouvelle heure reçue: %02d:%02d:%02d",
                          nouvelleHeure.heures, nouvelleHeure.minutes, nouvelleHeure.secondes);
 
                 // Mettre à jour l'heure actuelle
-                heureActuelle.heures = nouvelleHeure.heures;
-                heureActuelle.minutes = nouvelleHeure.minutes;
-                heureActuelle.secondes = nouvelleHeure.secondes;
-                heureActuelle.estVillePrincipale = true;
-
-                // Renvoyer immédiatement la nouvelle heure dans la file
-                if (xQueueSend(fileHeure, &heureActuelle, 0) != pdPASS) {
-                    ESP_LOGW(TAG, "Impossible de renvoyer l'heure mise à jour");
-                }
+                heureActuelle = nouvelleHeure;
+            }
+            
+            // Toujours renvoyer l'heure dans la file
+            if (xQueueSend(fileHeure, &nouvelleHeure, 0) != pdPASS)
+            {
+                ESP_LOGW(TAG, "Impossible de remettre l'heure dans la file");
             }
         }
 

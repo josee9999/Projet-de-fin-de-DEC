@@ -11,16 +11,17 @@
 #define PROCESSUSGESTIONHEURE_H
 
 #include "Neopixel/processusAffichageNeopixel.h" 
+#include "main.h"
 
 extern QueueHandle_t fileHeure;  
 extern sParametresHorloge parametresHorloge;
 
-typedef struct {
+/*typedef struct {
     int heures;
     int minutes;
     int secondes;
     bool estVillePrincipale;  // true pour la ville actuelle, false pour la 2e ville
-} sTemps;
+} sTemps;*/
 
 void task_GestionHeure(void *pvParameter);
 

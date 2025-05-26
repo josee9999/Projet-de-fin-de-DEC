@@ -218,6 +218,7 @@ esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req)
     char query[512];  // Augmentation de la taille du buffer
     sParametresHorloge params = {0};
     params.nbVille = 1;
+    params.modeActuel = MODE_HORLOGE;  // Forcer le mode horloge
 
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
     {
@@ -232,6 +233,7 @@ esp_err_t setHorlogeSansWifiHandler(httpd_req_t *req)
             if (sscanf(params.heure, "%d:%d", &heureActuelle.heures, &heureActuelle.minutes) == 2)
             {
                 heureActuelle.secondes = 0; // Forcer les secondes à 0
+                heureActuelle.estVillePrincipale = true;  // Marquer comme ville principale
                 if (xQueueSend(fileHeure, &heureActuelle, pdMS_TO_TICKS(10)) != pdPASS)
                 {
                     ESP_LOGE(TAG, "Erreur d'envoi de l'heure dans la queue fileHeure.");
@@ -350,6 +352,7 @@ esp_err_t setHorlogeAvecWifiHandler(httpd_req_t *req)
     char query[512];
     sParametresHorloge params = {0};
     params.nbVille = 2; // Mode deux villes
+    params.modeActuel = MODE_HORLOGE;  // Forcer le mode horloge
     strncpy(params.affichageType, "regulier", sizeof(params.affichageType) - 1); // Valeur par défaut
 
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
