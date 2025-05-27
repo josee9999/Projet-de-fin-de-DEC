@@ -181,10 +181,10 @@ const char *jsPageAvecWifi =
     "    return false;"
     "  }"
 
-    "  if (villeActuelle === ville2e) {"
+    /*"  if (villeActuelle === ville2e) {"
     "    alert('Veuillez choisir deux villes différentes');"
     "    return false;"
-    "  }"
+    "  }"*/
 
     "  var xhr = new XMLHttpRequest();"
     "  xhr.open(\"GET\", \"/setHorlogeAvecWifi?villeActuelle=\" + encodeURIComponent(villeActuelle) + "
@@ -197,13 +197,13 @@ const char *jsPageAvecWifi =
     "    \"&affichageTemperature=\" + affichageTemperature + "
     "    \"&affichageType=\" + encodeURIComponent(affichageType), true);"
 
-    "  xhr.onload = function() {"
+    /*"  xhr.onload = function() {"
     "    if (xhr.status === 200) {"
     "      alert('Configuration enregistrée avec succès');"
     "    } else {"
     "      alert('Erreur lors de l\\'enregistrement de la configuration');"
     "    }"
-    "  };"
+    "  };"*/
 
     "  xhr.onerror = function() {"
     "    alert('Erreur de connexion au serveur');"
