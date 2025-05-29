@@ -31,6 +31,8 @@ static int indexCouleurSec = 0;
 static int ledIndexMinHrs = 0;
 static int indexCouleurMinHrs = 0;*/
 
+static bool modePrecedentEtaitContinu = false;
+
 void setParametresHorloge(sParametresHorloge *params)
 {
     if (params)
@@ -101,9 +103,19 @@ void task_AffichageNeopixel(void *pvParameter)
         if (xQueueReceive(fileParamHorloge, &nouveauxParametres, pdMS_TO_TICKS(10)) == pdPASS)
         {
             ESP_LOGI(TAG, "Nouveaux paramètres reçus - Mode: %d", nouveauxParametres.modeActuel);
+            
+            // Vérifier si on change de mode ou de type d'affichage
+            bool changementMode = (mode != nouveauxParametres.modeActuel);
+            bool changementType = (strcmp(parametresHorloge.affichageType, nouveauxParametres.affichageType) != 0);
+            
+            if (changementMode || changementType) {
+                ESP_LOGI(TAG, "Changement détecté - Reset des variables d'affichage");
+                modePrecedentEtaitContinu = false;  // Réinitialise le flag
+                eteindreToutesLesLEDs(npContexts);
+            }
+    
             setParametresHorloge(&nouveauxParametres);
             mode = nouveauxParametres.modeActuel;
-            eteindreToutesLesLEDs(npContexts);
         }
 
         if (xSemaphoreTake(npMutex, portMAX_DELAY) == pdTRUE)
@@ -231,7 +243,7 @@ void task_AffichageNeopixel(void *pvParameter)
                 break;
 
             case MODE_TEMPERATURE:
-                // TODO .....................
+                // TODO 
                 break;
             }
             xSemaphoreGive(npMutex);
@@ -496,14 +508,70 @@ void affichageHorlogeContinu(sNeopixelContexts *npContexts, sTemps heureActuelle
     static float dernierePosHeure = -1;
     bool needUpdate = false;
 
+    // Forcer la réinitialisation si on vient de changer de mode
+    if (!modePrecedentEtaitContinu) {
+        ESP_LOGI(TAG, "Retour au mode continu - Réinitialisation forcée");
+        premierAffichage = true;
+        modePrecedentEtaitContinu = true;
+    }
+
     // Au premier affichage ou lors d'un changement de mode
     if (premierAffichage)
     {
+        ESP_LOGI(TAG, "Premier affichage continu - H:%d M:%d S:%d", 
+                 heureActuelle.heures, heureActuelle.minutes, heureActuelle.secondes);
+        
+        // Effacer tout l'affichage
         eteindreToutesLesLEDs(npContexts);
-        derniereSeconde = -1;
-        derniereMinute = -1;
-        derniereHeure = -1;
-        dernierePosHeure = -1;
+        
+        // Affichage immédiat des secondes
+        int posDebutSec = 45;
+        int posFinSec = secondePos;
+        if (posFinSec < posDebutSec) {
+            // Allumer de 45 à 60, puis de 0 à la position actuelle
+            for (int i = posDebutSec; i < 60; i++) {
+                mettreCouleurNeopixel(npContexts->npCtxSec, i,
+                                    couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
+            }
+            for (int i = 0; i <= posFinSec; i++) {
+                mettreCouleurNeopixel(npContexts->npCtxSec, i,
+                                    couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
+            }
+        } else {
+            // Allumer de 45 à la position actuelle
+            for (int i = posDebutSec; i <= posFinSec; i++) {
+                mettreCouleurNeopixel(npContexts->npCtxSec, i,
+                                    couleurSecondes.r, couleurSecondes.g, couleurSecondes.b);
+            }
+        }
+
+        // Affichage immédiat des minutes
+        int posDebutMin = 45;
+        int posFinMin = minutePos;
+        if (posFinMin < posDebutMin) {
+            // Allumer de 45 à 60, puis de 0 à la position actuelle
+            for (int i = posDebutMin; i < 60; i++) {
+                mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                    couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+            }
+            for (int i = 0; i <= posFinMin; i++) {
+                mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                    couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+            }
+        } else {
+            // Allumer de 45 à la position actuelle
+            for (int i = posDebutMin; i <= posFinMin; i++) {
+                mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,
+                                    couleurMinutes.r, couleurMinutes.g, couleurMinutes.b);
+            }
+        }
+        
+        // Mettre à jour les variables de suivi
+        derniereSeconde = heureActuelle.secondes;
+        derniereMinute = heureActuelle.minutes;
+        derniereHeure = heureActuelle.heures;
+        dernierePosHeure = -1;  // Force la mise à jour des heures
+        
         premierAffichage = false;
         needUpdate = true;
     }
@@ -584,7 +652,7 @@ void affichageHorlogeContinu(sNeopixelContexts *npContexts, sTemps heureActuelle
         }
         else
         {
-            // Sinon on allume simplement de 45 à la position actuelle
+            // Allumer de 45 à la position actuelle
             for (int i = startPos; i <= endPos; i++)
             {
                 mettreCouleurNeopixel(npContexts->npCtxMinHrs, i,

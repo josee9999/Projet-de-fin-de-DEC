@@ -153,13 +153,13 @@ const char *jsPageAvecWifi =
     "  }"
     "  var xhr = new XMLHttpRequest();"
     "  xhr.open(\"GET\", \"/setModeAvecWifi?mode=\" + mode, true);"
-    "  xhr.onload = function() {"
+   /* "  xhr.onload = function() {"
     "    if (xhr.status === 200) {"
     "      alert('Mode changé avec succès');"
     "    } else {"
     "      alert('Erreur lors du changement de mode');"
     "    }"
-    "  };"
+    "  };"*/
     "  xhr.send();"
     "};"
 
