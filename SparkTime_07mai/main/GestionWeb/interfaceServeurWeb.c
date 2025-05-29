@@ -153,13 +153,6 @@ const char *jsPageAvecWifi =
     "  }"
     "  var xhr = new XMLHttpRequest();"
     "  xhr.open(\"GET\", \"/setModeAvecWifi?mode=\" + mode, true);"
-   /* "  xhr.onload = function() {"
-    "    if (xhr.status === 200) {"
-    "      alert('Mode changé avec succès');"
-    "    } else {"
-    "      alert('Erreur lors du changement de mode');"
-    "    }"
-    "  };"*/
     "  xhr.send();"
     "};"
 
@@ -181,11 +174,6 @@ const char *jsPageAvecWifi =
     "    return false;"
     "  }"
 
-    /*"  if (villeActuelle === ville2e) {"
-    "    alert('Veuillez choisir deux villes différentes');"
-    "    return false;"
-    "  }"*/
-
     "  var xhr = new XMLHttpRequest();"
     "  xhr.open(\"GET\", \"/setHorlogeAvecWifi?villeActuelle=\" + encodeURIComponent(villeActuelle) + "
     "    \"&ville2e=\" + encodeURIComponent(ville2e) + "
@@ -196,14 +184,6 @@ const char *jsPageAvecWifi =
     "    \"&couleurMinutes2e=\" + encodeURIComponent(couleurMinutes2e) + "
     "    \"&affichageTemperature=\" + affichageTemperature + "
     "    \"&affichageType=\" + encodeURIComponent(affichageType), true);"
-
-    /*"  xhr.onload = function() {"
-    "    if (xhr.status === 200) {"
-    "      alert('Configuration enregistrée avec succès');"
-    "    } else {"
-    "      alert('Erreur lors de l\\'enregistrement de la configuration');"
-    "    }"
-    "  };"*/
 
     "  xhr.onerror = function() {"
     "    alert('Erreur de connexion au serveur');"
@@ -376,7 +356,9 @@ const char *htmlAccueilContenu =
     "<h2>Mode de connexion</h2>"
     "<input type=\"button\" value=\"Connexion avec WiFi\" onclick=\"connecterWifi()\">"
     "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
-    "<input type=\"button\" value=\"Connexion sans WiFi\" onclick=\"location.href='/pageSansWifi'\">";
+    "<input type=\"button\" value=\"Connexion sans WiFi\" onclick=\"location.href='/pageSansWifi'\">"
+    "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
+    "<input type=\"button\" value=\"Redémarrer\" onclick=\"redemarrerESP()\" style=\"background-color:rgb(154, 28, 28);\">";
 
 const char *htmlAccueilScript =
     "<script>"
@@ -389,6 +371,32 @@ const char *htmlAccueilScript =
     "    }"
     "  };"
     "  xhr.send();"
+    "}"
+    "function redemarrerESP() {"
+    "  if(confirm('Voulez-vous vraiment redémarrer le système?')) {"
+    "    console.log('Envoi de la requête de redémarrage');"
+    "    var xhr = new XMLHttpRequest();"
+    "    xhr.open('GET', '/redemarrer', true);"
+    "    xhr.onload = function() {"
+    "      console.log('Réponse reçue:', xhr.status);"
+    "      if (xhr.status === 200) {"
+    "        document.body.innerHTML = '<div style=\"text-align:center;padding:20px;\">"
+    "          <h2>Redémarrage en cours...</h2>"
+    "          <p>Veuillez patienter 15 secondes</p>"
+    "          <p>La page se rechargera automatiquement</p></div>';"
+    "        setTimeout(function() {"
+    "          window.location.href = '/';"
+    "        }, 15000);"
+    "      } else {"
+    "        alert('Erreur lors du redémarrage: ' + xhr.status);"
+    "      }"
+    "    };"
+    "    xhr.onerror = function() {"
+    "      console.log('Erreur de connexion');"
+    "      alert('Erreur de connexion au serveur');"
+    "    };"
+    "    xhr.send();"
+    "  }"
     "}"
     "</script>"
     "</div>"

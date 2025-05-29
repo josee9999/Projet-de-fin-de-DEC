@@ -19,6 +19,7 @@
 #include "interfaceServeurWeb.h"
 #include "GestionHeure/processusGestionHeure.h"
 #include <stdio.h>
+#include "esp_system.h"
 
 static void connecterAuWifiStation(void *arg);
 static void *copierSSIDetMotDePasse(const char *ssid, const char *password);
@@ -76,6 +77,9 @@ static void *copierSSIDetMotDePasse(const char *ssid, const char *password)
     return copy;
 }
 
+static httpd_handle_t serveur = NULL;
+static bool systeme_en_redemarrage = false;
+
 void demarrerServeurWeb(void)
 {
     // Enregistrer le gestionnaire d'événements WiFi
@@ -83,8 +87,8 @@ void demarrerServeurWeb(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
-    httpd_handle_t serveur = NULL;
+    config.max_uri_handlers = 10;  // Augmenter le nombre maximum de handlers
+    
     if (httpd_start(&serveur, &config) == ESP_OK)
     {
         httpd_uri_t uriPageAccueil = {
@@ -143,7 +147,20 @@ void demarrerServeurWeb(void)
             .user_ctx = NULL};
         httpd_register_uri_handler(serveur, &uriSetHorlogeAvecWifi);
 
-        ESP_LOGI(TAG, "Serveur web démarré.");
+        // Ajouter la route de redémarrage
+        httpd_uri_t uriRedemarrer = {
+            .uri = "/redemarrer",
+            .method = HTTP_GET,
+            .handler = redemarrerSystemeHandler,
+            .user_ctx = NULL
+        };
+        esp_err_t ret = httpd_register_uri_handler(serveur, &uriRedemarrer);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Erreur lors de l'enregistrement du handler de redémarrage: %d", ret);
+            return;
+        }
+        
+        ESP_LOGI(TAG, "Serveur web démarré avec route de redémarrage.");
     }
     else
     {
@@ -432,5 +449,29 @@ esp_err_t setHorlogeAvecWifiHandler(httpd_req_t *req)
     }
 
     httpd_resp_sendstr(req, "OK");
+    return ESP_OK;
+}
+
+esp_err_t redemarrerSystemeHandler(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "Handler de redémarrage appelé");
+
+    // Envoyer la réponse HTTP immédiatement
+    httpd_resp_set_type(req, "text/plain");
+    httpd_resp_sendstr(req, "Redémarrage en cours...");
+    
+    // Petit délai pour s'assurer que la réponse est envoyée
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // Arrêter tous les processus immédiatement
+    vTaskSuspendAll();
+    
+    // Désactiver les interruptions
+    portDISABLE_INTERRUPTS();
+    
+    // Forcer le redémarrage matériel
+    esp_system_abort("Redémarrage forcé");
+
+    // Ces lignes ne seront jamais exécutées
     return ESP_OK;
 }

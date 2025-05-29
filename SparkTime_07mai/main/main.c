@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h> // pour malloc et free
 #include "freertos/FreeRTOS.h"
@@ -6,6 +5,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "nvs_flash.h"
 
 #include "main.h"
 #include "Neopixel/processusAffichageNeopixel.h"
@@ -29,6 +29,17 @@ sNeopixelContexts *npContexts = NULL;
 
 void app_main(void)
 {
+    // Initialiser NVS en premier
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // Attendre un peu avant de continuer
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     // Initialisation des GPIOs pour les sections de Neopixels
     gpio_reset_pin(ENABLE_MIN_HRS);
     gpio_reset_pin(ENABLE_SEC);
