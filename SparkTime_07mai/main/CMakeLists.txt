@@ -1,8 +1,5 @@
 idf_component_register(
     SRCS 
-        "GestionTemperature/interfaceSenseurTemperature.c" 
-        "GestionTemperature/processusGestionTemperature.c" 
-        "GestionTemperature/piloteSenseurTemperature.c" 
         "GestionHeure/processusAPITemps.c" 
         "GestionHeure/processusGestionHeure.c" 
         "Neopixel/processusAffichageNeopixel.c" 
@@ -16,7 +13,6 @@ idf_component_register(
     INCLUDE_DIRS 
         "." 
         "Neopixel"
-        "GestionTemperature"
         "GestionHeure"
         "GestionWeb"
     REQUIRES 

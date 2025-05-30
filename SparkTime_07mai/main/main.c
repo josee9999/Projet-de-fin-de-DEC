@@ -76,7 +76,7 @@ void app_main(void)
 
     // Création de la tâche API Temps sur le core 0
     ESP_LOGI(TAG, "Création de la tâche API Temps");
-    xTaskCreatePinnedToCore(tache_APITemps, "Tache API Temps", 8192, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(task_APITemps, "Tache API Temps", 8192, NULL, 5, NULL, 0);
 
     // Allocation mémoire pour les contextes Neopixels (Secondes, Minutes/Heures)
     npContexts = malloc(sizeof(sNeopixelContexts));

@@ -196,7 +196,7 @@ esp_err_t obtenirHeureVille(const char *timezone, bool est_principale)
     return err;
 }
 
-void tache_APITemps(void *pvParameters)
+void task_APITemps(void *pvParameters)
 {
     sParametresHorloge params;
     TickType_t xLastWakeTime;
