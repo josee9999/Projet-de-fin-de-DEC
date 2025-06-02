@@ -366,90 +366,52 @@ esp_err_t setModeAvecWifiHandler(httpd_req_t *req)
 
 esp_err_t setHorlogeAvecWifiHandler(httpd_req_t *req)
 {
-    char query[512];
+    char query[256];
     sParametresHorloge params = {0};
-    params.nbVille = 2; // Mode deux villes
-    params.modeActuel = MODE_HORLOGE;  // Forcer le mode horloge
-    strncpy(params.affichageType, "regulier", sizeof(params.affichageType) - 1); // Valeur par défaut
+    params.nbVille = 2;
+    params.modeActuel = MODE_HORLOGE;
+    strncpy(params.affichageType, "regulier", sizeof(params.affichageType) - 1);
+    strncpy(params.villeActuelle, "auto", sizeof(params.villeActuelle) - 1);
 
     if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK)
     {
-        char villeActuelle[32], ville2e[32];
-        char couleurHeuresActuels[32], couleurMinutesActuels[32], couleurSecondes[32];
-        char couleurHeures2e[32], couleurMinutes2e[32];
-        char affichageTemperature[8];
-        char affichageType[16];
+        char val[32];
+        bool success = true;
 
-        // Récupération et décodage des paramètres
-        if (httpd_query_key_value(query, "villeActuelle", villeActuelle, sizeof(villeActuelle)) == ESP_OK &&
-            httpd_query_key_value(query, "ville2e", ville2e, sizeof(ville2e)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurHeuresActuels", couleurHeuresActuels, sizeof(couleurHeuresActuels)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurMinutesActuels", couleurMinutesActuels, sizeof(couleurMinutesActuels)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurSecondes", couleurSecondes, sizeof(couleurSecondes)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurHeures2e", couleurHeures2e, sizeof(couleurHeures2e)) == ESP_OK &&
-            httpd_query_key_value(query, "couleurMinutes2e", couleurMinutes2e, sizeof(couleurMinutes2e)) == ESP_OK &&
-            httpd_query_key_value(query, "affichageTemperature", affichageTemperature, sizeof(affichageTemperature)) == ESP_OK &&
-            httpd_query_key_value(query, "affichageType", affichageType, sizeof(affichageType)) == ESP_OK)
-        {
-            // Décodage URL des valeurs
-            urlDecode(villeActuelle, sizeof(villeActuelle));
-            urlDecode(ville2e, sizeof(ville2e));
-            urlDecode(couleurHeuresActuels, sizeof(couleurHeuresActuels));
-            urlDecode(couleurMinutesActuels, sizeof(couleurMinutesActuels));
-            urlDecode(couleurSecondes, sizeof(couleurSecondes));
-            urlDecode(couleurHeures2e, sizeof(couleurHeures2e));
-            urlDecode(couleurMinutes2e, sizeof(couleurMinutes2e));
-            urlDecode(affichageType, sizeof(affichageType));
+        // Récupérer les paramètres courts
+        if (httpd_query_key_value(query, "v", val, sizeof(val)) == ESP_OK) {
+            urlDecode(val, sizeof(val));
+            strncpy(params.ville2e, val, sizeof(params.ville2e) - 1);
+        } else success = false;
 
-            ESP_LOGI(TAG, "Paramètres reçus - Ville actuelle: %s, Ville 2e: %s", villeActuelle, ville2e);
-            ESP_LOGI(TAG, "Couleurs - Heures: %s, Minutes: %s, Secondes: %s", couleurHeuresActuels, couleurMinutesActuels, couleurSecondes);
-            ESP_LOGI(TAG, "Couleurs 2e ville - Heures: %s, Minutes: %s", couleurHeures2e, couleurMinutes2e);
-            ESP_LOGI(TAG, "Affichage température: %s", affichageTemperature);
-            ESP_LOGI(TAG, "Type d'affichage: %s", affichageType);
+        if (httpd_query_key_value(query, "h", val, sizeof(val)) == ESP_OK) {
+            urlDecode(val, sizeof(val));
+            strncpy(params.couleurHeuresActuelles, val, sizeof(params.couleurHeuresActuelles) - 1);
+        } else success = false;
 
-            // Configuration des paramètres
-            strncpy(params.villeActuelle, villeActuelle, sizeof(params.villeActuelle) - 1);
-            strncpy(params.ville2e, ville2e, sizeof(params.ville2e) - 1);
-            strncpy(params.couleurHeuresActuelles, couleurHeuresActuels, sizeof(params.couleurHeuresActuelles) - 1);
-            strncpy(params.couleurMinutesActuelles, couleurMinutesActuels, sizeof(params.couleurMinutesActuelles) - 1);
-            strncpy(params.couleurSecondesActuelles, couleurSecondes, sizeof(params.couleurSecondesActuelles) - 1);
-            strncpy(params.couleurHeures2e, couleurHeures2e, sizeof(params.couleurHeures2e) - 1);
-            strncpy(params.couleurMinutes2e, couleurMinutes2e, sizeof(params.couleurMinutes2e) - 1);
-            strncpy(params.affichageTemperature, affichageTemperature, sizeof(params.affichageTemperature) - 1);
-            strncpy(params.affichageType, affichageType, sizeof(params.affichageType) - 1);
+        if (httpd_query_key_value(query, "m", val, sizeof(val)) == ESP_OK) {
+            urlDecode(val, sizeof(val));
+            strncpy(params.couleurMinutesActuelles, val, sizeof(params.couleurMinutesActuelles) - 1);
+        } else success = false;
 
-            // Envoi des paramètres dans la file
-            if (xQueueSend(fileParamHorloge, &params, portMAX_DELAY) != pdPASS)
-            {
-                ESP_LOGE(TAG, "Erreur lors de l'envoi des paramètres dans la file");
-                httpd_resp_set_type(req, "text/plain");
-                httpd_resp_set_status(req, HTTPD_500);
-                httpd_resp_sendstr(req, "Erreur interne du serveur");
-                return ESP_FAIL;
-            }
+        if (httpd_query_key_value(query, "s", val, sizeof(val)) == ESP_OK) {
+            urlDecode(val, sizeof(val));
+            strncpy(params.couleurSecondesActuelles, val, sizeof(params.couleurSecondesActuelles) - 1);
+        } else success = false;
 
-            ESP_LOGI(TAG, "Paramètres envoyés avec succès dans la file");
-        }
-        else
-        {
-            ESP_LOGE(TAG, "Erreur lors de la récupération des paramètres");
-            httpd_resp_set_type(req, "text/plain");
-            httpd_resp_set_status(req, HTTPD_400);
-            httpd_resp_sendstr(req, "Requête invalide");
-            return ESP_FAIL;
+        if (httpd_query_key_value(query, "h2", val, sizeof(val)) == ESP_OK) {
+            urlDecode(val, sizeof(val));
+            strncpy(params.couleurHeures2e, val, sizeof(params.couleurHeures2e) - 1);
+        } else success = false;
+
+        if (success && xQueueSend(fileParamHorloge, &params, portMAX_DELAY) == pdPASS) {
+            httpd_resp_sendstr(req, "OK");
+            return ESP_OK;
         }
     }
-    else
-    {
-        ESP_LOGE(TAG, "Erreur lors de la récupération de la query string");
-        httpd_resp_set_type(req, "text/plain");
-        httpd_resp_set_status(req, HTTPD_400);
-        httpd_resp_sendstr(req, "Requête invalide");
-        return ESP_FAIL;
-    }
 
-    httpd_resp_sendstr(req, "OK");
-    return ESP_OK;
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid parameters");
+    return ESP_FAIL;
 }
 
 esp_err_t redemarrerSystemeHandler(httpd_req_t *req)

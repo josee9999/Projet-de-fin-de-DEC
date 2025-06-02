@@ -198,38 +198,22 @@ esp_err_t obtenirHeureVille(const char *timezone, bool est_principale)
 
 void task_APITemps(void *pvParameters)
 {
-    sParametresHorloge params;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = pdMS_TO_TICKS(60000); // Mise à jour toutes les minutes
-
     ESP_LOGI(TAG, "Démarrage de la tâche API Temps");
+    sParametresHorloge params;
 
     while(1) {
-        xLastWakeTime = xTaskGetTickCount();
-
-        // Attendre les paramètres de l'horloge
-        ESP_LOGI(TAG, "Attente des paramètres de l'horloge...");
-        if (xQueueReceive(fileParamHorloge, &params, portMAX_DELAY) == pdPASS) {
+        // Attendre de recevoir des paramètres
+        if (xQueueReceive(fileParamHorloge, &params, portMAX_DELAY) == pdTRUE) {
             ESP_LOGI(TAG, "Paramètres reçus - Ville actuelle: %s, Nombre de villes: %d", 
                      params.villeActuelle, params.nbVille);
 
-            // Obtenir l'heure pour la ville actuelle
-            ESP_LOGI(TAG, "Requête de l'heure pour la ville actuelle");
-            if (obtenirHeureVille(params.villeActuelle, true) != ESP_OK) {
-                ESP_LOGE(TAG, "Erreur lors de l'obtention de l'heure pour %s", params.villeActuelle);
-            }
-
-            // Si en mode deux villes, obtenir l'heure pour la deuxième ville
-            if (params.nbVille == 2) {
-                ESP_LOGI(TAG, "Requête de l'heure pour la deuxième ville: %s", params.ville2e);
-                if (obtenirHeureVille(params.ville2e, false) != ESP_OK) {
-                    ESP_LOGE(TAG, "Erreur lors de l'obtention de l'heure pour %s", params.ville2e);
-                }
+            // Obtenir uniquement l'heure via IP
+            esp_err_t result = obtenirHeureIP();
+            if (result != ESP_OK) {
+                ESP_LOGE(TAG, "Erreur lors de l'obtention de l'heure via IP");
+            } else {
+                ESP_LOGI(TAG, "Heure IP mise à jour avec succès");
             }
         }
-
-        // Attendre jusqu'à la prochaine mise à jour
-        ESP_LOGI(TAG, "Attente jusqu'à la prochaine mise à jour...");
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }

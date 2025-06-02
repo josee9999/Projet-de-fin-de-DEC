@@ -155,7 +155,7 @@ const char *jsPageSansWifi =
     "    \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) +"
     "    \"&affichageTemperature=\" + affichageTemperature +"
     "    \"&affichageType=\" + encodeURIComponent(affichageType), true);"
-    
+
     "  xhr.onload = function() {"
     "    if (xhr.status === 200) {"
     "      console.log('Configuration appliquée');"
@@ -190,29 +190,25 @@ const char *jsPageAvecWifi =
 
     "document.getElementById(\"formPerso\").onsubmit = function(e) {"
     "  e.preventDefault();"
-    "  var ville2e = document.getElementById(\"ville2e\").value;"
-    "  var couleurHeuresActuels = document.getElementById(\"couleurHeuresActuels\").value;"
-    "  var couleurMinutesActuels = document.getElementById(\"couleurMinutesActuels\").value;"
-    "  var couleurSecondes = document.getElementById(\"couleurSecondes\").value;"
-    "  var couleurHeures2e = document.getElementById(\"couleurHeures2e\").value;"
-    "  var affichageTemperature = document.getElementById(\"affichageTemperature\").checked;"
-
-    "  if (!ville2e || !couleurHeuresActuels || !couleurMinutesActuels || "
-    "      !couleurSecondes || !couleurHeures2e) {"
+    "  var p = {"
+    "    v: document.getElementById(\"ville2e\").value,"
+    "    h: document.getElementById(\"couleurHeuresActuels\").value,"
+    "    m: document.getElementById(\"couleurMinutesActuels\").value,"
+    "    s: document.getElementById(\"couleurSecondes\").value,"
+    "    h2: document.getElementById(\"couleurHeures2e\").value"
+    "  };"
+    "  if (!p.v || !p.h || !p.m || !p.s || !p.h2) {"
     "    alert('Veuillez remplir tous les champs requis');"
     "    return false;"
     "  }"
-
     "  var xhr = new XMLHttpRequest();"
     "  xhr.open(\"GET\", \"/setHorlogeAvecWifi?\" +"
-    "    \"ville2e=\" + encodeURIComponent(ville2e) +"
-    "    \"&couleurHeuresActuels=\" + encodeURIComponent(couleurHeuresActuels) +"
-    "    \"&couleurMinutesActuels=\" + encodeURIComponent(couleurMinutesActuels) +"
-    "    \"&couleurSecondes=\" + encodeURIComponent(couleurSecondes) +"
-    "    \"&couleurHeures2e=\" + encodeURIComponent(couleurHeures2e) +"
-    "    \"&affichageTemperature=\" + affichageTemperature +"
-    "    \"&affichageType=regulier\", true);"
-    
+    "    \"v=\" + encodeURIComponent(p.v) +"
+    "    \"&h=\" + encodeURIComponent(p.h) +"
+    "    \"&m=\" + encodeURIComponent(p.m) +"
+    "    \"&s=\" + encodeURIComponent(p.s) +"
+    "    \"&h2=\" + encodeURIComponent(p.h2), true);"  // Removed trailing semicolon
+
     "  xhr.onload = function() {"
     "    if (xhr.status === 200) {"
     "      console.log('Configuration appliquée');"
@@ -221,6 +217,7 @@ const char *jsPageAvecWifi =
     "    }"
     "  };"
     "  xhr.send();"
+    "  return false;"
     "};"
     "</script>";
 
@@ -237,37 +234,37 @@ const char *htmlAvecWifiContenu =
     "<form id=\"formPerso\">"
 
     //"<select name=\"villeActuelle\" id=\"villeActuelle\" required>"
-    
+
     "</select>"
     "<select name=\"ville2e\" id=\"ville2e\" required>"
     "<option value=\"\" disabled selected hidden>— Choisir la 2<sup>e</sup> ville —</option>"
-    "<option value=\"-12\">Inhabité</option>"
-    "<option value=\"-11\">Samoa américaines</option>"
-    "<option value=\"-10\">Îles Cook</option>"
-    "<option value=\"-9\">Îles Gambier</option>"
-    "<option value=\"-8\">Alaska (USA)</option>"
-    "<option value=\"-7\">Yukon (Canada)</option>"
-    "<option value=\"-6\">Costa Rica</option>"
-    "<option value=\"-5\">Panama</option>"
-    "<option value=\"-4\">Québec (Canada)</option>"//Disabled
-    "<option value=\"-3\">Argentine</option>"
-    "<option value=\"-2\">Saint-Pierre-et-Miquelon (France)</option>"
-    "<option value=\"-1\">Cap-Vert</option>"
-    "<option value=\"0\">Islande</option>"
-    "<option value=\"+1\">Algérie</option>"
-    "<option value=\"+2\">Italie</option>"
-    "<option value=\"+3\">Kenya</option>"
-    "<option value=\"+4\">Arménie</option>"
-    "<option value=\"+5\">Turkménistan </option>"
-    "<option value=\"+6\">Bangladesh</option>"
-    "<option value=\"+7\">Cambodge</option>"
-    "<option value=\"+8\">Philippines</option>"
-    "<option value=\"+9\">Japon</option>"
-    "<option value=\"+10\">Papouasie-Nouvelle-Guinée</option>"
-    "<option value=\"+11\">Îles Salomon</option>"
-    "<option value=\"+12\">Fidji</option>"
-    "<option value=\"+13\">Samoa</option>"
-    "<option value=\"+14\">Îles de la Ligne (Kiribati)</option>"
+    "<option value=\"-12\">UTC-12: Inhabité</option>"
+    "<option value=\"-11\">UTC-11: Samoa américaines</option>"
+    "<option value=\"-10\">UTC-10: Îles Cook</option>"
+    "<option value=\"-9\">UTC-9: Îles Gambier</option>"
+    "<option value=\"-8\">UTC-8: Alaska (USA)</option>"
+    "<option value=\"-7\">UTC-7: Yukon (Canada)</option>"
+    "<option value=\"-6\">UTC-6: Costa Rica</option>"
+    "<option value=\"-5\">UTC-5: Panama</option>"
+    "<option value=\"\"disabled hidden>UTC-4: Québec (Canada)</option>" // Disabled
+    "<option value=\"-3\">UTC-3: Argentine</option>"
+    "<option value=\"-2\">UTC-2: Saint-Pierre-et-Miquelon (France)</option>"
+    "<option value=\"-1\">UTC-1: Cap-Vert</option>"
+    "<option value=\"0\">UTC 0: Islande</option>"
+    "<option value=\"+1\">UTC+1: Algérie</option>"
+    "<option value=\"+2\">UTC+2: Italie</option>"
+    "<option value=\"+3\">UTC+3: Kenya</option>"
+    "<option value=\"+4\">UTC+4: Arménie</option>"
+    "<option value=\"+5\">UTC+5: Turkménistan </option>"
+    "<option value=\"+6\">UTC+6: Bangladesh</option>"
+    "<option value=\"+7\">UTC+7: Cambodge</option>"
+    "<option value=\"\"disabled hidden>UTC+8: Philippines</option>"
+    "<option value=\"+9\">UTC+9: Japon</option>"
+    "<option value=\"+10\">UTC+10: Papouasie-Nouvelle-Guinée</option>"
+    "<option value=\"+11\">UTC+11: Îles Salomon</option>"
+    "<option value=\"+12\">UTC+12: Fidji</option>"
+    "<option value=\"+13\">UTC+13: Samoa</option>"
+    "<option value=\"+14\">UTC+14: Îles de la Ligne (Kiribati)</option>"
     "</select>"
     "<p>Couleurs pour l'heure de la ville actuelle:</p>"
     "<select name=\"couleurHeuresActuels\" id=\"couleurHeuresActuels\" required>"
@@ -286,22 +283,21 @@ const char *htmlAvecWifiCouleurs3 =
 const char *htmlAvecWifiCouleurs4 =
     "</select>"
     "<p>Couleur de l'heure de la 2<sup>e</sup> ville:</p>"
-    "<p><small>*La couleur des minutes sera seulement appliqué si le fuseau horaire de la 2<sup>e</sup> ville n'a pas les mêmes minutes que la ville actuelle.</small></p>"
     "<select name=\"couleurHeures2e\" id=\"couleurHeures2e\" required>"
     "<option value=\"\" disabled selected hidden>— Couleur des heures —</option>";
 
-const char *htmlAvecWifiCouleurs5 =
+/*const char *htmlAvecWifiCouleurs5 =
     "</select>"
     "<select name=\"couleurMinutes2e\" id=\"couleurMinutes2e\" required>"
-    "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>";
+    "<option value=\"\" disabled selected hidden>— Couleur des minutes —</option>";*/
 
 const char *htmlAvecWifiFin =
     "</select>"
-    "<div class=\"ligneHeure\">"
+    /*"<div class=\"ligneHeure\">"
     "<label for=\"affichageTemperature\">Affichage de température :</label>"
     "<input type=\"checkbox\" id=\"affichageTemperature\" name=\"affichageTemperature\"><br>"
     "</div>"
-    "<input type=\"hidden\" name=\"affichageType\" value=\"regulier\">"
+    "<input type=\"hidden\" name=\"affichageType\" value=\"regulier\">"*/
     "<input type=\"submit\" value=\"Personnaliser\">"
     "</form>"
     "<hr style=\"margin: 2em 0; width: 100%; border: none; border-top: 2px solid #ccc;\">"
@@ -443,10 +439,10 @@ const char *htmlAccueilScript =
 esp_err_t pageAccueilHandler(httpd_req_t *req)
 {
     static char pageAccueil[8192] = {0};
-    
+
     // Réinitialiser le buffer
     memset(pageAccueil, 0, sizeof(pageAccueil));
-    
+
     // Concaténer toutes les parties
     strcat(pageAccueil, htmlAccueilDebut);
     strcat(pageAccueil, styleCSS);
@@ -461,10 +457,10 @@ esp_err_t pageAccueilHandler(httpd_req_t *req)
 esp_err_t pagePersonnalisationSansWifiHandler(httpd_req_t *req)
 {
     static char pageSansWifi[8192] = {0};
-    
+
     // Réinitialiser le buffer
     memset(pageSansWifi, 0, sizeof(pageSansWifi));
-    
+
     // Concaténer toutes les parties
     strcat(pageSansWifi, htmlSansWifiDebut);
     strcat(pageSansWifi, styleCSS);
@@ -485,10 +481,10 @@ esp_err_t pagePersonnalisationSansWifiHandler(httpd_req_t *req)
 esp_err_t pagePersonnalisationAvecWifiHandler(httpd_req_t *req)
 {
     static char pageAvecWifi[8192] = {0};
-    
+
     // Réinitialiser le buffer
     memset(pageAvecWifi, 0, sizeof(pageAvecWifi));
-    
+
     // Concaténer toutes les parties
     strcat(pageAvecWifi, htmlAvecWifiDebut);
     strcat(pageAvecWifi, styleCSS);
@@ -501,8 +497,8 @@ esp_err_t pagePersonnalisationAvecWifiHandler(httpd_req_t *req)
     strcat(pageAvecWifi, optionsCouleur);
     strcat(pageAvecWifi, htmlAvecWifiCouleurs4);
     strcat(pageAvecWifi, optionsCouleur);
-    strcat(pageAvecWifi, htmlAvecWifiCouleurs5);
-    strcat(pageAvecWifi, optionsCouleur);
+    // strcat(pageAvecWifi, htmlAvecWifiCouleurs5);
+    // strcat(pageAvecWifi, optionsCouleur);
     strcat(pageAvecWifi, htmlAvecWifiFin);
     strcat(pageAvecWifi, jsPageAvecWifi);
 

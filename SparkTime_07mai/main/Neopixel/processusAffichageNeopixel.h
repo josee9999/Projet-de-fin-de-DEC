@@ -32,5 +32,5 @@ void gererModeTest(sNeopixelContexts *npContexts, eModeAffichage *mode);
 
 void affichageHorlogeRegulier(sNeopixelContexts *npContexts, sTemps heureActuelle, sTemps *dernierAffichage, int secondePos, int minutePos, float positionExacte, tNeopixel couleurSecondes, tNeopixel couleurMinutes, tNeopixel couleurHeures);
 void affichageHorlogeContinu(sNeopixelContexts *npContexts, sTemps heureActuelle, sTemps *dernierAffichage, int secondePos, int minutePos, tNeopixel couleurSecondes, tNeopixel couleurMinutes, tNeopixel couleurHeures);
-
+void afficherHorloge2Ville(sNeopixelContexts *npContexts, sTemps heureActuelle, sParametresHorloge *params);
 #endif
